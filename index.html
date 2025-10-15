@@ -304,6 +304,7 @@ $('themeSelect').addEventListener('change', e=> applyTheme(e.target.value))
 (function(){ const t=localStorage.getItem('copycenter_theme')||'light'; $('themeSelect').value=t; applyTheme(t) })()
 
 // -------- PIN Login (login page) --------
+// -------- PIN Login (login page) --------
 document.addEventListener("DOMContentLoaded", function () {
   const loginRoot = document.getElementById("loginRoot");
   const appRoot = document.getElementById("appRoot");
@@ -341,18 +342,16 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- tombol login handler ---
   if (loginBtn) {
     loginBtn.addEventListener("click", () => {
-      const v = (loginPin.value || "").trim();
+      const v = (loginPin && loginPin.value || "").trim();
       if (!v) {
-        loginErr.style.display = "block";
-        loginErr.textContent = "PIN belum diisi.";
+        if (loginErr) { loginErr.style.display = "block"; loginErr.textContent = "PIN belum diisi."; }
         return;
       }
       if (v === getPin()) {
         localStorage.setItem("copycenter_authenticated", "true");
         showApp();
       } else {
-        loginErr.style.display = "block";
-        loginErr.textContent = "PIN salah, coba lagi!";
+        if (loginErr) { loginErr.style.display = "block"; loginErr.textContent = "PIN salah, coba lagi!"; }
       }
     });
   }
@@ -372,26 +371,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-
-// ---------- PIN settings ----------
-(function(){
-  const saveBtn = $('savePinBtn'), newPin = $('newPinField'), enabledSel = $('pinEnabledSelect')
-  if(saveBtn){
-    saveBtn.addEventListener('click', ()=>{
-      const v = (newPin.value||'').trim()
-      if(v.length<4){ alert('PIN harus minimal 4 digit'); return }
-      localStorage.setItem('copycenter_pin', v); localStorage.setItem('copycenter_pin_enabled','true'); alert('PIN berhasil diubah'); newPin.value=''
-    })
-  }
-  if(enabledSel){
-    enabledSel.value = localStorage.getItem('copycenter_pin_enabled') || 'true'
-    enabledSel.addEventListener('change', ()=>{
-      const val = enabledSel.value === 'true'
-      localStorage.setItem('copycenter_pin_enabled', val? 'true':'false')
-      alert('Setelan kunci disimpan: ' + (val? 'Aktif' : 'Non-aktif'))
-    })
-  }
-})()
 
 // ---------- Simple chart (canvas-based) ----------
 const chartCanvas = $('chartCanvas'), ctx = chartCanvas.getContext('2d')
