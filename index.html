@@ -303,19 +303,75 @@ $('themeSelect').addEventListener('change', e=> applyTheme(e.target.value))
 // init theme
 (function(){ const t=localStorage.getItem('copycenter_theme')||'light'; $('themeSelect').value=t; applyTheme(t) })()
 
-// ---------- PIN Login (login page) ----------
-(function(){
-  const loginRoot = $('loginRoot'), appRoot = $('appRoot'), loginBtn = $('loginBtn'), visitBtn = $('visitBtn'), loginPin = $('loginPin'), loginErr = $('loginErr')
-  function getPin(){ return localStorage.getItem('copycenter_pin') || '1234' }
-  function pinEnabled(){ return JSON.parse(localStorage.getItem('copycenter_pin_enabled')||'true') }
-  function showApp(){ loginRoot.style.display='none'; appRoot.style.display='block'; render(); renderChart() }
-  function showLogin(){ loginRoot.style.display='flex'; appRoot.style.display='none' }
-  if(!pinEnabled()){ showApp(); return } // if disabled, show app directly
-  // handlers
-  loginBtn.addEventListener('click', ()=>{ const v = (loginPin.value||'').trim(); if(!v){ loginErr.style.display='block'; loginErr.textContent='Masukkan PIN'; return } if(v===getPin()){ loginErr.style.display='none'; showApp() } else { loginErr.style.display='block'; loginErr.textContent='PIN salah'; loginPin.value=''; loginPin.focus() } })
-  visitBtn.addEventListener('click', ()=>{ window.location.href='https://github.com' })
-  loginPin.addEventListener('keydown', e=>{ if(e.key==='Enter') loginBtn.click() })
-})()
+// -------- PIN Login (login page) --------
+document.addEventListener("DOMContentLoaded", function () {
+  const loginRoot = document.getElementById("loginRoot");
+  const appRoot = document.getElementById("appRoot");
+  const loginBtn = document.getElementById("loginBtn");
+  const visitBtn = document.getElementById("visitBtn");
+  const loginPin = document.getElementById("loginPin");
+  const loginErr = document.getElementById("loginErr");
+
+  function getPin() {
+    return localStorage.getItem("copycenter_pin") || "1234";
+  }
+  function pinEnabled() {
+    return JSON.parse(localStorage.getItem("copycenter_pin_enabled")) || true;
+  }
+
+  function showApp() {
+    if (loginRoot) loginRoot.style.display = "none";
+    if (appRoot) appRoot.style.display = "block";
+    if (typeof render === "function") render();
+    if (typeof renderChart === "function") renderChart();
+  }
+
+  function showLogin() {
+    if (loginRoot) loginRoot.style.display = "flex";
+    if (appRoot) appRoot.style.display = "none";
+  }
+
+  if (!pinEnabled()) {
+    showApp();
+    return;
+  } else {
+    showLogin();
+  }
+
+  // --- tombol login handler ---
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      const v = (loginPin.value || "").trim();
+      if (!v) {
+        loginErr.style.display = "block";
+        loginErr.textContent = "PIN belum diisi.";
+        return;
+      }
+      if (v === getPin()) {
+        localStorage.setItem("copycenter_authenticated", "true");
+        showApp();
+      } else {
+        loginErr.style.display = "block";
+        loginErr.textContent = "PIN salah, coba lagi!";
+      }
+    });
+  }
+
+  // --- tekan Enter juga bisa login ---
+  if (loginPin) {
+    loginPin.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && loginBtn) loginBtn.click();
+    });
+  }
+
+  // --- tombol kunjungi (opsional) ---
+  if (visitBtn) {
+    visitBtn.addEventListener("click", () => {
+      window.location.href = "https://github.com/rizkirokania2025/";
+    });
+  }
+});
+
 
 // ---------- PIN settings ----------
 (function(){
