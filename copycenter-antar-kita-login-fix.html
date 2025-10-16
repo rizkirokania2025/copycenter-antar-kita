@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copycenter Antar Kita — Login Fix</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(160deg, #e3f2f1, #f4f8f8);
+      margin: 0;
+    }
+    .login-box {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      max-width: 350px;
+      width: 100%;
+    }
+    .logo {
+      font-size: 3rem;
+      background-color: #004d47;
+      color: white;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 20%;
+      margin: 0 auto 20px auto;
+      font-weight: bold;
+    }
+    h2 {
+      margin: 10px 0;
+      color: #003d38;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      margin-top: 15px;
+      font-size: 1rem;
+      text-align: center;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: #015e55;
+      color: white;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #014840;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-box" id="loginRoot">
+    <div class="logo">CC</div>
+    <h2>Copycenter Antar Kita</h2>
+    <p>Masukkan PIN untuk mengakses dashboard</p>
+    <input type="password" id="loginPin" placeholder="PIN 4 digit" maxlength="4" />
+    <button id="loginBtn">Masuk</button>
+    <div class="error" id="loginErr"></div>
+    <p style="font-size: 0.9rem; margin-top: 15px; color: gray;">
+      PIN default <b>1234</b>. Ubah nanti di pengaturan.
+    </p>
+  </div>
+
+  <div id="appRoot" style="display: none; text-align: center;">
+    <h2>Selamat datang di dashboard!</h2>
+    <p>Login berhasil ✅</p>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const loginRoot = document.getElementById("loginRoot");
+      const appRoot = document.getElementById("appRoot");
+      const loginBtn = document.getElementById("loginBtn");
+      const loginPin = document.getElementById("loginPin");
+      const loginErr = document.getElementById("loginErr");
+
+      function getPin() {
+        return localStorage.getItem("copycenter_pin") || "1234";
+      }
+
+      function showApp() {
+        loginRoot.style.display = "none";
+        appRoot.style.display = "block";
+      }
+
+      // tombol login
+      loginBtn.addEventListener("click", function () {
+        const pin = (loginPin.value || "").trim();
+        if (!pin) {
+          loginErr.textContent = "PIN belum diisi.";
+          loginErr.style.display = "block";
+          return;
+        }
+
+        if (pin === getPin()) {
+          localStorage.setItem("copycenter_authenticated", "true");
+          loginErr.style.display = "none";
+          showApp();
+        } else {
+          loginErr.textContent = "PIN salah, coba lagi!";
+          loginErr.style.display = "block";
+        }
+      });
+
+      // tekan enter
+      loginPin.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") loginBtn.click();
+      });
+    });
+  </script>
+</body>
+</html>
