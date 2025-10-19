@@ -1,5 +1,8 @@
 <!-- --- Paste ini tepat sebelum akhir file index.html, di dalam <script> utama --- -->
 <script>
+let chartSales = null; // fix ReferenceError: chartSales before initialization
+</script>
+
 (function(){
   // helper select
   const $ = id => document.getElementById(id);
@@ -62,6 +65,26 @@
     div.id = 'ledgerQuickFilter';
     div.style.margin = '8px 0';
     div.innerHTML = `
+    .sidebar button {
+  font-size: 15px;
+  font-weight: 500;
+  color: #eaf5f4;
+}
+
+.sidebar button.active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.sidebar button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.sidebar button small {
+  color: #b6dfda;
+  font-size: 12px;
+}
+
       <label style="display:block;margin-bottom:6px" class="muted">Tampilkan:</label>
       <select id="ledgerRange" style="padding:6px;border-radius:8px;border:1px solid #e6e9ef">
         <option value="daily">Harian</option>
