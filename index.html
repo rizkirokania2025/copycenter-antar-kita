@@ -3,97 +3,96 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Copycenter Antar Kita — Pencatatan Lengkap</title>
+  <title>Copycenter Antar Kita — Full (Backup, Chart, PDF, Mobile, Filter)</title>
+
+  <!-- Chart.js, jsPDF, html2canvas via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
-    :root{--bg:#f7f8fb;--card:#fff;--accent:#164e63;--muted:#6b7280}
+    :root{
+      --bg:#f7f8fb;--card:#fff;--accent:#164e63;--muted:#6b7280;
+      --accent-2:#0f766e; --danger:#ef4444;
+    }
     *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{margin:0;padding:18px;background:linear-gradient(180deg,#f3f4f6,#ffffff);color:#0f172a}
-    .wrap{max-width:980px;margin:0 auto}
-    header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    body{margin:0;padding:18px;background:linear-gradient(180deg,#f3f6f5,#ffffff);color:#0f172a}
+    .wrap{max-width:1100px;margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
     h1{font-size:20px;margin:0}
     p.lead{margin:4px 0 18px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
-    @media(max-width:880px){.grid{grid-template-columns:1fr} .actions-row{flex-wrap:wrap}}
+    .grid{display:grid;grid-template-columns:1fr 400px;gap:18px}
+    @media(max-width:980px){.grid{grid-template-columns:1fr} .right-col{order:2}}
     .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(12,15,30,0.06)}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
     input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
     .row{display:flex;gap:8px}
-    .row .col{flex:1}
+    .col{flex:1}
     button{background:var(--accent);color:#fff;border:0;padding:10px 12px;border-radius:10px;font-weight:600;cursor:pointer}
     button.ghost{background:transparent;border:1px solid #e6e9ef;color:var(--accent)}
-    .totals{display:flex;gap:8px;flex-wrap:wrap}
-    .stat{flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);text-align:center}
-    .stat h3{margin:0;font-size:16px}
-    .stat p{margin:6px 0 0;font-weight:700}
+    .small{font-size:13px;padding:6px 8px;border-radius:8px}
     table{width:100%;border-collapse:collapse;margin-top:12px}
     th,td{padding:8px;border-bottom:1px solid #eef2f7;font-size:13px;text-align:left}
     .muted{color:var(--muted);font-size:13px}
-    .actions-row{display:flex;gap:8px;align-items:center}
-    .small{font-size:13px;padding:6px 8px;border-radius:8px}
-    .danger{background:#ef4444}
-    .success{background:#16a34a}
-    .login-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.12)}
-    .login-card{background:var(--card);padding:24px;border-radius:12px;box-shadow:0 10px 30px rgba(12,15,30,0.12);width:420px;max-width:92%}
-    .login-card h2{margin:0 0 8px}
-    .login-note{color:var(--muted);font-size:13px;margin-top:8px}
-    .product-list{margin-top:12px;border-radius:8px;padding:8px;border:1px dashed #eaeef2}
+    .totals{display:flex;gap:8px;flex-wrap:wrap}
+    .stat{flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);text-align:center}
+    .stat h3{margin:0;font-size:16px}
+    .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .charts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .chart-card{flex:1;min-width:260px;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fcfffe)}
+    .search-input{width:320px;max-width:100%}
     footer{margin-top:14px;color:var(--muted);font-size:13px}
-    .right-actions{display:flex;gap:8px;align-items:center}
+    .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .danger{background:var(--danger)}
   </style>
 </head>
 <body>
-  <!-- LOGIN OVERLAY -->
-  <div id="loginRoot" class="login-overlay" style="display:none">
-    <div class="login-card">
-      <div style="text-align:center;margin-bottom:12px">
-        <div style="display:inline-block;background:#0f766e;color:#fff;padding:12px;border-radius:12px;font-weight:700">CC</div>
-      </div>
-      <h2>Copycenter Antar Kita</h2>
-      <p>Masukkan PIN untuk mengakses dashboard pencatatan</p>
-      <input id="loginPin" placeholder="PIN 4 digit" type="password" maxlength="8" style="margin-top:8px" />
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button id="loginBtn">Masuk</button>
-        <button id="visitBtn" class="ghost">Batal</button>
-      </div>
-      <div id="loginErr" class="login-note" style="display:none;color:#b91c1c"></div>
-      <div class="login-note">PIN default <strong>1234</strong>. Ubah di Pengaturan.</div>
-    </div>
-  </div>
-
-  <!-- APP -->
-  <div id="appRoot" class="wrap" style="display:none">
+  <div class="wrap">
     <header>
       <div>
         <h1>Copycenter Antar Kita — Pencatatan Lengkap</h1>
-        <p class="lead">Catat penjualan (fotokopi/print/pas foto/atk/rokok/minuman), pengeluaran, stok, laporan, dan backup.</p>
+        <p class="lead">Penjualan (fotokopi/print/pas foto/atk/rokok/minuman), pengeluaran, stok, laporan & backup.</p>
       </div>
-      <div class="right-actions">
-        <div class="actions-row">
-          <button id="btnExport" class="small">Export CSV</button>
-          <button id="btnExportStock" class="small ghost">Export Stok</button>
-          <button id="btnImport" class="small ghost">Import CSV</button>
-          <button id="btnSettings" class="small ghost">Pengaturan</button>
-          <button id="btnClear" class="small ghost">Hapus Semua</button>
-        </div>
-        <button id="btnLogout" class="small ghost" style="margin-left:8px">Logout</button>
+
+      <div class="actions">
+        <button id="btnExport" class="small">Export CSV</button>
+        <button id="btnExportStock" class="small ghost">Export Stok</button>
+        <button id="btnImport" class="small ghost">Import CSV</button>
+        <button id="btnBackup" class="small ghost">Download Backup</button>
+        <button id="btnPdf" class="small ghost">Cetak PDF</button>
+        <button id="btnSettings" class="small ghost">Pengaturan</button>
+        <button id="btnClear" class="small ghost">Hapus Semua</button>
+        <button id="btnLogout" class="small ghost">Logout</button>
       </div>
     </header>
 
-    <main class="grid" style="margin-top:14px">
+    <div style="margin-top:14px" class="grid">
+      <!-- left -->
       <section class="card">
         <h2 style="font-size:16px;margin:0 0 12px">Tambah Transaksi</h2>
 
-        <div style="margin-bottom:12px">
-          <label>Jenis</label>
-          <select id="type">
-            <option value="sale">Penjualan (fotokopi / print / produk)</option>
-            <option value="expense">Pengeluaran</option>
-          </select>
+        <div style="margin-bottom:12px" class="row" >
+          <div class="col">
+            <label>Jenis</label>
+            <select id="type">
+              <option value="sale">Penjualan (fotokopi / print / produk)</option>
+              <option value="expense">Pengeluaran</option>
+            </select>
+          </div>
+
+          <div style="width:160px">
+            <label>Filter Kategori</label>
+            <select id="filterCategory">
+              <option value="">Semua</option>
+            </select>
+          </div>
         </div>
 
         <div id="saleForm">
           <label>Nama Item / Layanan</label>
-          <input id="item" placeholder="Contoh: Fotokopi A4 (1 lembar)" />
+          <input id="item" placeholder="Contoh: Fotokopi A4 (1 lembar)" list="prodList" />
+          <datalist id="prodList"></datalist>
+
           <div class="row" style="margin-top:8px">
             <div class="col">
               <label>Jumlah</label>
@@ -136,289 +135,445 @@
         </div>
 
         <div style="margin-top:14px">
-          <h4>Daftar Produk (contoh)</h4>
-          <div id="productList" class="product-list"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h4 style="margin:0">Filter & Cari</h4>
+            <div>
+              <input id="searchText" class="search-input" placeholder="Cari keterangan..." />
+            </div>
+          </div>
+
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <input id="dateFrom" type="date" />
+            <input id="dateTo" type="date" />
+            <select id="filterType">
+              <option value="">Semua Tipe</option>
+              <option value="sale">Penjualan</option>
+              <option value="expense">Pengeluaran</option>
+            </select>
+            <button id="btnApplyFilter" class="ghost small">Terapkan</button>
+            <button id="btnClearFilter" class="small ghost">Reset</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px" id="productListCard" class="card" >
+          <h4 style="margin:0 0 8px">Daftar Produk & Stok (contoh)</h4>
+          <div id="productList"></div>
         </div>
       </section>
 
-      <aside class="card">
+      <!-- right -->
+      <aside class="card right-col">
         <h3 style="margin:0 0 10px">Buku Kas / Ledger</h3>
-        <div style="max-height:520px;overflow:auto">
+        <div style="max-height:420px;overflow:auto">
           <table id="ledger">
-            <thead><tr><th>Tgl</th><th>Keterangan</th><th>Debit</th><th>Kredit</th><th></th></tr></thead>
+            <thead><tr><th>Tgl</th><th>Keterangan</th><th>Kategori</th><th>Debit</th><th>Kredit</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
+
+        <div class="charts" style="margin-top:12px">
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;font-size:14px">Pendapatan / Pengeluaran (30 hari)</h4>
+            <canvas id="lineChart" height="150"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4 style="margin:0 0 8px;font-size:14px">Distribusi Kategori</h4>
+            <canvas id="pieChart" height="150"></canvas>
+          </div>
+        </div>
+
         <div style="margin-top:10px;display:flex;gap:8px">
           <button id="btnToday" class="small">Filter Hari Ini</button>
           <button id="btnAll" class="small ghost">Tampilkan Semua</button>
         </div>
+
         <footer>
-          <div class="muted" style="margin-top:8px">Data transaksi & stok tersimpan di browser (localStorage). Backup pakai Export CSV.</div>
+          <div class="muted" style="margin-top:8px">Data transaksi & stok tersimpan di browser (localStorage). Backup otomatis & manual tersedia.</div>
         </footer>
       </aside>
-    </main>
+    </div>
+
+    <footer style="margin-top:18px">
+      <div class="muted">Made for Copycenter Antar Kita — lokal, sederhana, cepat.</div>
+    </footer>
   </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // helper $
-  const $ = id => document.getElementById(id);
+  <script>
+  // Full app script with features 1-5
+  document.addEventListener('DOMContentLoaded', ()=>{
 
-  // elements
-  const loginRoot = $('loginRoot');
-  const appRoot = $('appRoot');
-  const loginBtn = $('loginBtn');
-  const visitBtn = $('visitBtn');
-  const loginPin = $('loginPin');
-  const loginErr = $('loginErr');
-  const btnLogout = $('btnLogout');
+    // helpers
+    const $ = id => document.getElementById(id);
+    function formatIDR(n){ if(!n && n!==0) return 'Rp 0'; return 'Rp ' + Number(n).toLocaleString('id-ID') }
+    function nowIso(){ return new Date().toISOString(); }
+    function parseDateLocale(s){ const d = new Date(s); return isNaN(d)? null : d; }
 
-  // app elements
-  const ledgerTbody = document.querySelector('#ledger tbody');
-  let data = JSON.parse(localStorage.getItem('copycenter_data')||'[]');
+    // storage keys
+    const TX_KEY='copycenter_data';
+    const PROD_KEY='copycenter_products';
+    const PIN_KEY='copycenter_pin';
+    const PIN_ENABLED='copycenter_pin_enabled';
+    const AUTH_KEY='copycenter_authenticated';
+    const BACKUP_KEY_PREFIX='copycenter_backup_';
 
-  function formatIDR(n){ if(!n && n!==0) return 'Rp 0'; return 'Rp ' + Number(n).toLocaleString('id-ID') }
+    // initial data load
+    let data = JSON.parse(localStorage.getItem(TX_KEY)||'[]');
+    const defaultProducts = [
+      {id:'p1',name:'Fotokopi B/W',category:'Fotokopi',price:1500,stock:0},
+      {id:'p2',name:'Fotokopi Warna',category:'Fotokopi',price:4000,stock:0},
+      {id:'p3',name:'Print Pas Foto',category:'Fotokopi',price:20000,stock:0},
+      {id:'p4',name:'Pulpen',category:'ATK',price:3000,stock:0},
+      {id:'p5',name:'Buku Tulis',category:'ATK',price:6000,stock:0},
+      {id:'p6',name:'Aqua 600ml',category:'Minuman',price:5000,stock:0},
+      {id:'p7',name:'Rokok Surya Besar',category:'Rokok',price:36000,stock:3},
+      {id:'p8',name:'Rokok Surya Kecil',category:'Rokok',price:27000,stock:0},
+    ];
+    let products;
+    try{ products = JSON.parse(localStorage.getItem(PROD_KEY)||'null') || defaultProducts; }
+    catch(e){ products = defaultProducts; localStorage.setItem(PROD_KEY, JSON.stringify(products)) }
 
-  // ---------- product sample (init once) ----------
-  const defaultProducts = [
-    {id: 'p1', name: 'Fotokopi B/W', category: 'Fotokopi', price: 1500, stock: 0},
-    {id: 'p2', name: 'Fotokopi Warna', category: 'Fotokopi', price: 4000, stock: 0},
-    {id: 'p3', name: 'Print Pas Foto', category: 'Fotokopi', price: 20000, stock: 0},
-    {id: 'p4', name: 'Pulpen', category: 'ATK', price: 3000, stock: 0},
-    {id: 'p5', name: 'Buku Tulis', category: 'ATK', price: 6000, stock: 0},
-    {id: 'p6', name: 'Aqua 600ml', category: 'Minuman', price: 5000, stock: 0},
-    {id: 'p7', name: 'Rokok Surya Besar', category: 'Rokok', price: 36000, stock: 3},
-    {id: 'p8', name: 'Rokok Surya Kecil', category: 'Rokok', price: 27000, stock: 0},
-  ];
+    // UI elements
+    const ledgerTbody = document.querySelector('#ledger tbody');
+    const prodListDatalist = $('prodList');
+    const productListDiv = $('productList');
+    const filterCategory = $('filterCategory');
+    const filterType = $('filterType');
+    const dateFrom = $('dateFrom');
+    const dateTo = $('dateTo');
+    const searchText = $('searchText');
 
-  function initProducts(){
-    const key='copycenter_products';
-    try{
-      const p = JSON.parse(localStorage.getItem(key)||'null');
-      if(!p){ localStorage.setItem(key, JSON.stringify(defaultProducts)); return defaultProducts; }
-      return p;
-    }catch(e){ localStorage.setItem(key, JSON.stringify(defaultProducts)); return defaultProducts; }
-  }
+    // Charts
+    let lineChart = null, pieChart = null;
+    const lineCtx = document.getElementById('lineChart').getContext('2d');
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
 
-  let products = initProducts();
+    function save(){ localStorage.setItem(TX_KEY, JSON.stringify(data)); render(); }
 
-  function renderProductList(){
-    const el = $('productList');
-    el.innerHTML = '';
-    products.forEach(p=>{
-      const d = document.createElement('div');
-      d.style.display='flex'; d.style.justifyContent='space-between'; d.style.padding='6px 0';
-      d.innerHTML = `<div>${p.name} <small style="color:var(--muted)">(${p.category})</small></div><div>${formatIDR(p.price)} <button data-id="${p.id}" class="small ghost" style="margin-left:8px">Tambah Stok</button></div>`;
-      el.appendChild(d);
-    });
-    // attach stok handler
-    el.querySelectorAll('button').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const id = b.dataset.id;
-        const qty = prompt('Masukkan jumlah stok masuk (angka)', '1');
-        if(!qty) return;
-        const qn = Number(qty)||0;
-        products = products.map(pp => pp.id===id ? {...pp, stock: (pp.stock||0)+qn} : pp);
-        localStorage.setItem('copycenter_products', JSON.stringify(products));
-        renderProductList();
+    // ---------- render functions ----------
+    function renderProductElements(){
+      // datalist
+      prodListDatalist.innerHTML = '';
+      const cats = new Set();
+      products.forEach(p=>{
+        const opt = document.createElement('option'); opt.value = p.name; prodListDatalist.appendChild(opt);
+        cats.add(p.category || '');
       });
-    });
-  }
+      // list
+      productListDiv.innerHTML = '';
+      products.forEach(p=>{
+        const row = document.createElement('div');
+        row.style.display='flex'; row.style.justifyContent='space-between'; row.style.padding='6px 0';
+        row.innerHTML = `<div><strong>${p.name}</strong> <small style="color:var(--muted)">(${p.category})</small></div><div>${formatIDR(p.price)} • Stok: ${p.stock} <button data-id="${p.id}" class="small ghost" style="margin-left:8px">Tambah Stok</button></div>`;
+        productListDiv.appendChild(row);
+      });
+      // attach stok handlers
+      productListDiv.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          const id = b.dataset.id; const qty = Number(prompt('Jumlah stok masuk', '1'))||0;
+          if(qty<=0) return alert('Jumlah harus > 0');
+          products = products.map(pp => pp.id===id ? {...pp, stock: (pp.stock||0)+qty} : pp);
+          localStorage.setItem(PROD_KEY, JSON.stringify(products)); renderProductElements();
+        });
+      });
 
-  // ---------- auth / login ----------
-  function getPin(){ return localStorage.getItem('copycenter_pin') || '1234' }
-  function pinEnabled(){ return JSON.parse(localStorage.getItem('copycenter_pin_enabled'))!==false } // default true
-  function isAuthenticated(){ return localStorage.getItem('copycenter_authenticated') === 'true' }
-
-  function showApp(){ 
-    if(loginRoot) loginRoot.style.display='none';
-    if(appRoot) appRoot.style.display='block';
-    render(false);
-    renderProductList();
-  }
-  function showLogin(){
-    if(loginRoot) loginRoot.style.display='flex';
-    if(appRoot) appRoot.style.display='none';
-  }
-
-  // init decide
-  if(!pinEnabled() || isAuthenticated()){
-    showApp();
-  } else {
-    showLogin();
-  }
-
-  // login handlers
-  if(loginBtn){
-    loginBtn.addEventListener('click', ()=>{
-      const v = (loginPin.value||'').trim();
-      if(!v){ loginErr.style.display='block'; loginErr.textContent='PIN belum diisi.'; return; }
-      if(v === getPin()){ localStorage.setItem('copycenter_authenticated','true'); loginErr.style.display='none'; showApp(); }
-      else { loginErr.style.display='block'; loginErr.textContent='PIN salah, coba lagi!'; }
-    });
-  }
-  if(loginPin) loginPin.addEventListener('keydown', e=>{ if(e.key==='Enter' && loginBtn) loginBtn.click() })
-  if(visitBtn) visitBtn.addEventListener('click', ()=>{ window.location.href='https://github.com/rizkirokania2025' })
-
-  // logout
-  if(btnLogout){
-    btnLogout.addEventListener('click', ()=>{
-      localStorage.removeItem('copycenter_authenticated');
-      showLogin();
-      // clear input
-      if(loginPin) loginPin.value='';
-    });
-  }
-
-  // ---------- main app logic ----------
-  function nowIso(){return new Date().toISOString()}
-  function save(){ localStorage.setItem('copycenter_data', JSON.stringify(data)); render() }
-
-  function render(filterToday=false){
-    ledgerTbody.innerHTML='';
-    let income=0, expense=0;
-    const rows = data.filter(tx=>{
-      if(!filterToday) return true;
-      const d = new Date(tx.t); const today=new Date();
-      return d.getFullYear()==today.getFullYear() && d.getMonth()==today.getMonth() && d.getDate()==today.getDate();
-    });
-    rows.slice().reverse().forEach((tx,i)=>{
-      const tr=document.createElement('tr');
-      const date=new Date(tx.t);
-      const desc= tx.type=='sale' ? `${tx.item} (x${tx.qty})` : `${tx.desc} — ${tx.cat||''}`;
-      const debit = tx.type=='sale' ? formatIDR(tx.total) : '';
-      const credit = tx.type=='expense' ? formatIDR(tx.amount) : '';
-      if(tx.type=='sale') income += Number(tx.total);
-      if(tx.type=='expense') expense += Number(tx.amount);
-      tr.innerHTML = `<td>${date.toLocaleString()}</td><td>${desc}</td><td>${debit}</td><td>${credit}</td><td><button data-i='${data.length-1-i}' class='small ghost'>Hapus</button></td>`;
-      ledgerTbody.appendChild(tr);
-    });
-    $('totalIncome').textContent = formatIDR(income);
-    $('totalExpense').textContent = formatIDR(expense);
-    $('totalProfit').textContent = formatIDR(income - expense);
-
-    // attach delete handlers
-    ledgerTbody.querySelectorAll('button').forEach(b=>{
-      b.addEventListener('click', e=>{
-        const idx = Number(e.currentTarget.dataset.i);
-        if(confirm('Hapus transaksi?')){ data.splice(idx,1); save(); }
-      })
-    })
-  }
-
-  // initial render if app visible
-  if(appRoot && appRoot.style.display!=='none'){ render(false); renderProductList(); }
-
-  // toggle forms
-  $('type').addEventListener('change', e=>{
-    if(e.target.value=='sale'){ $('saleForm').style.display='block'; $('expenseForm').style.display='none' }
-    else { $('saleForm').style.display='none'; $('expenseForm').style.display='block' }
-  })
-
-  // add transactions
-  function addTx(){
-    const type = $('type').value;
-    if(type=='sale'){
-      const item = $('item').value.trim() || 'Penjualan';
-      const qty = Number($('qty').value) || 1;
-      const price = Number($('price').value) || 0;
-      const total = qty * price;
-      data.push({type:'sale', item, qty, price, total, t:nowIso()})
-    } else {
-      const desc = $('expDesc').value.trim() || 'Pengeluaran';
-      const cat = $('expCat').value;
-      const amount = Number($('expAmount').value) || 0;
-      data.push({type:'expense', desc, cat, amount, t:nowIso()})
+      // filter categories
+      filterCategory.innerHTML = '<option value="">Semua</option>';
+      Array.from(cats).sort().forEach(c=>{
+        const o=document.createElement('option'); o.value=c; o.textContent=c; filterCategory.appendChild(o);
+      });
     }
-    save();
-    $('item').value=''; $('qty').value=1; $('price').value=1500; $('expDesc').value=''; $('expAmount').value=50000;
-  }
-  $('btnAdd').addEventListener('click', addTx)
-  $('btnAddQuick').addEventListener('click', ()=>{
-    $('type').value='sale'; $('type').dispatchEvent(new Event('change'));
-    $('item').value='Fotokopi (1 lembar)'; $('qty').value=1; $('price').value=1500; addTx();
-  })
 
-  // stock in button: simple prompt
-  $('btnStockIn').addEventListener('click', ()=>{
-    const name = prompt('Nama produk (contoh: Fotokopi B/W)');
-    if(!name) return;
-    const q = Number(prompt('Jumlah stok masuk', '1'))||0;
-    if(q<=0) return alert('Jumlah harus > 0');
-    // update products if exists
-    const idx = products.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
-    if(idx>=0){ products[idx].stock = (products[idx].stock||0)+q; localStorage.setItem('copycenter_products', JSON.stringify(products)); renderProductList(); alert('Stok ditambahkan'); }
-    else {
-      const price = Number(prompt('Harga per unit (Rp)', '1500'))||0;
-      const cat = prompt('Kategori produk', 'Produk') || 'Produk';
-      const id = 'p'+(Date.now());
-      products.push({id, name, category:cat, price, stock:q});
-      localStorage.setItem('copycenter_products', JSON.stringify(products)); renderProductList(); alert('Produk baru & stok ditambahkan');
+    function render(filterToday=false){
+      ledgerTbody.innerHTML=''; let income=0, expense=0;
+      // apply filters from UI first
+      const fType = filterType.value;
+      const fCat = filterCategory.value;
+      const sText = (searchText.value||'').toLowerCase().trim();
+      const from = dateFrom.value ? new Date(dateFrom.value) : null;
+      const to = dateTo.value ? new Date(dateTo.value) : null;
+
+      const rows = data.filter(tx=>{
+        // type filter
+        if(fType && tx.type !== fType) return false;
+        // category filter (only for expense or product category via description detection)
+        if(fCat){
+          const cat = tx.cat || '';
+          const maybe = (tx.item||'').toLowerCase();
+          if(!cat && !maybe.includes(fCat.toLowerCase())) return false;
+          if(cat && cat !== fCat) return false;
+        }
+        // search
+        if(sText){
+          const hay = ((tx.item||'') + ' ' + (tx.desc||'') + ' ' + (tx.cat||'')).toLowerCase();
+          if(!hay.includes(sText)) return false;
+        }
+        // date range
+        if(from){
+          const d = new Date(tx.t); if(d < from) return false;
+        }
+        if(to){
+          const d = new Date(tx.t); if(d > new Date(to.getFullYear(), to.getMonth(), to.getDate(),23,59,59)) return false;
+        }
+        if(!filterToday) return true;
+        const d = new Date(tx.t); const today = new Date();
+        return d.getFullYear()==today.getFullYear() && d.getMonth()==today.getMonth() && d.getDate()==today.getDate();
+      });
+
+      rows.slice().reverse().forEach((tx,i)=>{
+        const tr=document.createElement('tr');
+        const date=new Date(tx.t);
+        const desc = tx.type==='sale' ? `${tx.item} (x${tx.qty||1})` : (tx.desc || '');
+        const cat = tx.type==='sale' ? (tx.category||'Produk') : (tx.cat||'');
+        const debit = tx.type==='sale' ? formatIDR(tx.total) : '';
+        const credit = tx.type==='expense' ? formatIDR(tx.amount) : '';
+        if(tx.type==='sale') income += Number(tx.total);
+        if(tx.type==='expense') expense += Number(tx.amount);
+        tr.innerHTML = `<td>${date.toLocaleString()}</td><td>${desc}</td><td>${cat}</td><td>${debit}</td><td>${credit}</td><td><button class="small ghost" data-i="${data.length-1-i}">Hapus</button></td>`;
+        ledgerTbody.appendChild(tr);
+      });
+
+      $('totalIncome').textContent = formatIDR(income);
+      $('totalExpense').textContent = formatIDR(expense);
+      $('totalProfit').textContent = formatIDR(income-expense);
+
+      // delete handlers
+      ledgerTbody.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', e=>{
+          const idx = Number(e.currentTarget.dataset.i);
+          if(confirm('Hapus transaksi?')){ data.splice(idx,1); save(); }
+        })
+      });
+
+      // update charts
+      updateCharts();
     }
-  });
 
-  // export CSV
-  $('btnExport').addEventListener('click', ()=>{
-    if(!data.length){ alert('Tidak ada data untuk diexport.'); return }
-    const rows=[['tanggal','tipe','keterangan','debit','kredit']];
-    data.forEach(tx=>{
-      const t=new Date(tx.t).toLocaleString();
-      if(tx.type=='sale') rows.push([t,'Penjualan',tx.item + ' x'+tx.qty,tx.total,'']);
-      else rows.push([t,'Pengeluaran',tx.desc + ' ('+ (tx.cat||'') +')','',''+tx.amount]);
-    });
-    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`copycenter_data_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
+    // ---------- charts ----------
+    function getLastNDays(n=30){
+      const arr=[]; for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); arr.push(d); } return arr;
+    }
 
-  // export stock
-  $('btnExportStock').addEventListener('click', ()=>{
-    const key='copycenter_products';
-    const p = JSON.parse(localStorage.getItem(key)||'[]');
-    if(!p.length) return alert('Tidak ada data stok.');
-    const rows=[['produk','kategori','harga','stok']];
-    p.forEach(x=> rows.push([x.name||'', x.category||'', x.price||0, x.stock||0]));
-    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`copycenter_stock_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
+    function updateCharts(){
+      // Prepare daily totals for last 30 days
+      const days = getLastNDays(30);
+      const labels = days.map(d=> d.toLocaleDateString());
+      const incomeData = labels.map(()=>0);
+      const expenseData = labels.map(()=>0);
 
-  // import CSV (simple)
-  $('btnImport').addEventListener('click', ()=>{ 
-    const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='.csv';
-    fileInput.onchange = async (e)=> {
-      const f = e.target.files[0]; if(!f) return; const text = await f.text();
-      // simple parser
-      const rows = text.split(/\r?\n/).map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'').trim()));
-      if(rows.length<2){ alert('File CSV kosong atau format tidak dikenali.'); return }
-      const imported=[];
-      for(let i=1;i<rows.length;i++){
-        const r = rows[i]; if(!r || r.length<4) continue;
-        const tipe = (r[1]||'').toLowerCase();
-        const desc = r[2]||'';
-        const debit = Number((r[3]||'').replace(/[^0-9\-\.]/g,'')) || 0;
-        const credit = Number((r[4]||'').replace(/[^0-9\-\.]/g,'')) || 0;
-        if(debit>0 || tipe.includes('penjualan')){ imported.push({type:'sale', item: desc.replace(/ x\d+$/i,''), qty:1, price:debit, total:debit, t:nowIso()}) }
-        else if(credit>0 || tipe.includes('pengeluaran')){ imported.push({type:'expense', desc:desc, cat:'Lainnya', amount: credit, t:nowIso()}) }
+      const catAgg = {}; // category -> total amount (sales)
+      data.forEach(tx=>{
+        const dstr = new Date(tx.t).toLocaleDateString();
+        const idx = labels.indexOf(dstr);
+        if(idx>=0){
+          if(tx.type==='sale') incomeData[idx] += Number(tx.total);
+          if(tx.type==='expense') expenseData[idx] += Number(tx.amount);
+        }
+        // category agg (sales)
+        if(tx.type==='sale'){
+          const cat = tx.category || 'Produk';
+          catAgg[cat] = (catAgg[cat] || 0) + Number(tx.total);
+        }
+        if(tx.type==='expense'){
+          const cat = tx.cat || 'Pengeluaran';
+          catAgg[cat] = (catAgg[cat] || 0) + Number(tx.amount);
+        }
+      });
+
+      // line chart
+      if(lineChart) lineChart.destroy();
+      lineChart = new Chart(lineCtx, {
+        type:'line',
+        data:{
+          labels,
+          datasets:[
+            {label:'Pemasukan', data: incomeData, borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,0.08)', tension:0.2},
+            {label:'Pengeluaran', data: expenseData, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.08)', tension:0.2}
+          ]
+        },
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:true}}}
+      });
+
+      // pie chart
+      const pieLabels = Object.keys(catAgg);
+      const pieData = pieLabels.map(k=>catAgg[k]);
+      if(pieChart) pieChart.destroy();
+      pieChart = new Chart(pieCtx, {
+        type:'pie',
+        data:{ labels: pieLabels, datasets:[{data: pieData, backgroundColor: pieLabels.map((_,i)=>`hsl(${i*60 % 360} 60% 55%)`)}] },
+        options:{responsive:true, maintainAspectRatio:false}
+      });
+    }
+
+    // ---------- add tx ----------
+    $('btnAdd').addEventListener('click', ()=>{
+      const type = $('type').value;
+      if(type==='sale'){
+        const item = $('item').value.trim() || 'Penjualan';
+        const qty = Number($('qty').value)||1;
+        const price = Number($('price').value)||0;
+        const total = qty * price;
+        // try match product category & update stock decrement if found
+        const prod = products.find(p=> p.name.toLowerCase() === item.toLowerCase());
+        let category = '';
+        if(prod){ category = prod.category || ''; prod.stock = (prod.stock||0) - qty; if(prod.stock<0) prod.stock=0; localStorage.setItem(PROD_KEY, JSON.stringify(products)); renderProductElements(); }
+        data.push({type:'sale', item, qty, price, total, category, t: nowIso()});
+      } else {
+        const desc = $('expDesc').value.trim() || 'Pengeluaran';
+        const cat = $('expCat').value;
+        const amount = Number($('expAmount').value)||0;
+        data.push({type:'expense', desc, cat, amount, t: nowIso()});
       }
-      if(!imported.length){ alert('Tidak ada transaksi valid terdeteksi'); return }
-      data = data.concat(imported); save(); alert('Import berhasil: '+imported.length+' transaksi.');
-    };
-    fileInput.click();
-  });
+      save();
+      // reset fields
+      $('item').value=''; $('qty').value=1; $('price').value=1500; $('expDesc').value=''; $('expAmount').value=50000;
+    });
 
-  // clear
-  $('btnClear').addEventListener('click', ()=>{ if(confirm('Yakin hapus semua data?')){ data=[]; save(); } });
+    $('btnAddQuick').addEventListener('click', ()=>{
+      $('type').value='sale'; $('type').dispatchEvent(new Event('change'));
+      $('item').value='Fotokopi (1 lembar)'; $('qty').value=1; $('price').value=1500;
+      $('btnAdd').click();
+    });
 
-  // filters
-  $('btnToday').addEventListener('click', ()=>render(true));
-  $('btnAll').addEventListener('click', ()=>render(false));
+    // stock in
+    $('btnStockIn').addEventListener('click', ()=>{
+      const name = prompt('Nama produk (contoh: Fotokopi B/W)');
+      if(!name) return;
+      const q = Number(prompt('Jumlah stok masuk', '1'))||0; if(q<=0) return alert('Jumlah harus >0');
+      const idx = products.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+      if(idx>=0){ products[idx].stock = (products[idx].stock||0)+q; }
+      else { const price = Number(prompt('Harga per unit', '1500'))||1500; const cat = prompt('Kategori','Produk')||'Produk'; products.push({id:'p'+Date.now(), name, category:cat, price, stock:q}); }
+      localStorage.setItem(PROD_KEY, JSON.stringify(products)); renderProductElements(); alert('Stok ditambahkan');
+    });
 
-  // keep rendering if storage changed elsewhere
-  window.addEventListener('storage', ()=>{ data = JSON.parse(localStorage.getItem('copycenter_data')||'[]'); render(); renderProductList(); });
+    // toggle forms
+    $('type').addEventListener('change', e=>{
+      if(e.target.value==='sale'){ $('saleForm').style.display='block'; $('expenseForm').style.display='none'; }
+      else { $('saleForm').style.display='none'; $('expenseForm').style.display='block'; }
+    });
 
-}); // end DOMContentLoaded
-</script>
+    // export CSV full data
+    $('btnExport').addEventListener('click', ()=>{
+      if(!data.length) return alert('Tidak ada data untuk diexport.');
+      const rows=[['tanggal','tipe','keterangan','kategori','debit','kredit']];
+      data.forEach(tx=>{
+        const t=new Date(tx.t).toLocaleString();
+        if(tx.type==='sale') rows.push([t,'Penjualan', tx.item+' x'+(tx.qty||1), tx.category||'', tx.total, '']);
+        else rows.push([t,'Pengeluaran', tx.desc||'', tx.cat||'', '', tx.amount]);
+      });
+      const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`copycenter_data_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // export stock CSV
+    $('btnExportStock').addEventListener('click', ()=>{
+      const p = JSON.parse(localStorage.getItem(PROD_KEY)||'[]');
+      if(!p.length) return alert('Tidak ada data stok.');
+      const rows=[['produk','kategori','harga','stok']];
+      p.forEach(x=> rows.push([x.name||'', x.category||'', x.price||0, x.stock||0]));
+      const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv],{type:'text/csv'}); const url = URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`copycenter_stock_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // import CSV (basic)
+    $('btnImport').addEventListener('click', ()=>{
+      const input = document.createElement('input'); input.type='file'; input.accept='.csv';
+      input.onchange = async e=>{
+        const f = e.target.files[0]; if(!f) return;
+        const text = await f.text();
+        const rows = text.split(/\r?\n/).map(r=> r.split(',').map(c=>c.replace(/^"|"$/g,'').trim()));
+        if(rows.length<2) return alert('CSV tidak valid');
+        const imported=[];
+        for(let i=1;i<rows.length;i++){
+          const r=rows[i]; if(!r || r.length<5) continue;
+          const tipe=(r[1]||'').toLowerCase();
+          if(tipe.includes('penjualan') || Number(r[4])>0){
+            imported.push({type:'sale', item:r[2]||'Penjualan', qty:1, price:Number(r[4])||0, total:Number(r[4])||0, category:r[3]||'', t: nowIso()});
+          } else {
+            imported.push({type:'expense', desc:r[2]||'Pengeluaran', cat:r[3]||'Lainnya', amount:Number(r[5])||0, t: nowIso()});
+          }
+        }
+        if(!imported.length) return alert('Tidak ada transaksi valid di CSV');
+        data = data.concat(imported); save(); alert('Import berhasil: '+imported.length);
+      };
+      input.click();
+    });
+
+    // delete all
+    $('btnClear').addEventListener('click', ()=>{ if(confirm('Yakin hapus semua data?')){ data=[]; save(); } });
+
+    // filters apply
+    $('btnApplyFilter').addEventListener('click', ()=> render(false));
+    $('btnClearFilter').addEventListener('click', ()=>{
+      filterType.value=''; filterCategory.value=''; dateFrom.value=''; dateTo.value=''; searchText.value=''; render(false);
+    });
+
+    // search enter
+    searchText.addEventListener('keydown', e=>{ if(e.key==='Enter') render(false); });
+
+    // today/all
+    $('btnToday').addEventListener('click', ()=> render(true));
+    $('btnAll').addEventListener('click', ()=> render(false));
+
+    // ---------- backup (feature 1) ----------
+    function createBackupObject(){ return {ts: new Date().toISOString(), data: data, products: products, pin: localStorage.getItem(PIN_KEY) || '1234'} }
+    function saveBackupToLocal(prefix=true){
+      const obj = createBackupObject();
+      const key = BACKUP_KEY_PREFIX + (new Date().toISOString().slice(0,16).replace(/[:T]/g,'_'));
+      localStorage.setItem(key, JSON.stringify(obj));
+      return {key, obj};
+    }
+    function downloadBackup(){
+      const {key,obj} = saveBackupToLocal();
+      const text = JSON.stringify(obj, null, 2);
+      const blob = new Blob([text], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download = key + '.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+    $('btnBackup').addEventListener('click', ()=>{ downloadBackup(); alert('Backup dibuat & didownload'); });
+
+    // auto-backup interval (6 hours) — can be changed
+    const AUTO_BACKUP_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+    setInterval(()=>{ saveBackupToLocal(); console.log('Auto backup saved'); }, AUTO_BACKUP_INTERVAL_MS);
+
+    // ---------- Export to PDF (feature 3) ----------
+    async function printLedgerToPDF(){
+      // snapshot the ledger area
+      const area = document.querySelector('.card.right-col') || document.body;
+      const canvas = await html2canvas(area, {scale:1.5, allowTaint:true, useCORS:true});
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({orientation:'portrait', unit:'pt', format:'a4'});
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      // scale image to page
+      const imgWidth = pageWidth - 40;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let y = 20;
+      pdf.addImage(imgData, 'PNG', 20, y, imgWidth, imgHeight);
+      pdf.save('ledger_'+ (new Date().toISOString().slice(0,10)) +'.pdf');
+    }
+    $('btnPdf').addEventListener('click', ()=>{ printLedgerToPDF(); });
+
+    // ---------- settings / logout ----------
+    $('btnLogout').addEventListener('click', ()=>{
+      localStorage.removeItem(AUTH_KEY);
+      // redirect to login page if you use login overlay (this file doesn't include overlay now)
+      alert('Logout berhasil — reload halaman untuk login lagi jika perlu.');
+    });
+
+    // ---------- quick init UI ----------
+    renderProductElements();
+    render(false);
+
+    // ---------- chart initial update ----------
+    updateCharts();
+
+    // expose save for console if needed
+    window.copycenter = { data, products, save };
+
+  }); // DOMContentLoaded end
+  </script>
 </body>
 </html>
