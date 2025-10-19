@@ -1,547 +1,197 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Copycenter Antar Kita — Pencatatan Lengkap</title>
-  <style>
-    :root{
-      --bg:#f3faf8; --card:#fff; --accent:#0f6b63; --muted:#6b7280;
-      --muted-2:#9aa9a5;
-    }
-    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{margin:0;padding:0;background:linear-gradient(180deg,#f3f7f6,#ffffff);color:#0f172a}
-    .app{display:flex;min-height:100vh}
-    /* sidebar */
-    .sidebar{width:220px;padding:20px;background:linear-gradient(180deg,#0f6b63 0,#0d6a5f00 80%);color:#e9f6f4}
-    .logo{width:56px;height:56px;border-radius:12px;background:#0f6b63;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;margin-bottom:12px}
-    .side-links{display:flex;flex-direction:column;gap:8px}
-    .side-links button{background:transparent;border:0;padding:10px;border-radius:8px;color:#daf3ec;text-align:left;cursor:pointer}
-    .side-links button:hover{background:rgba(255,255,255,0.06)}
-    .side-links button.active{background:rgba(255,255,255,0.12);font-weight:600;color:#fff}
-    .side-links small{display:block;color:#c7e7df;font-size:12px}
-    /* content */
-    .content{flex:1;padding:22px 28px}
-    header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    h1{font-size:20px;margin:0}
-    .top-actions{display:flex;gap:8px;align-items:center}
-    .top-actions button{padding:8px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
-    .small{padding:6px 10px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;color:var(--accent);cursor:pointer}
-    .ghost{background:transparent;border:1px solid #e6e9ef;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px;margin-top:14px}
-    @media(max-width:980px){.grid{grid-template-columns:1fr} .sidebar{display:none}}
-    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(12,15,30,0.04)}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
-    .row{display:flex;gap:8px}
-    .row .col{flex:1}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:8px;border-bottom:1px solid #eef2f7;font-size:13px;text-align:left}
-    .muted{color:var(--muted);font-size:13px}
-    .totals{display:flex;gap:8px;flex-wrap:wrap}
-    .stat{flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);text-align:center}
-    .stat h3{margin:0;font-size:16px}
-    .stat p{margin:6px 0 0;font-weight:700}
-    /* POS modal */
-    #posModal{position:fixed;left:0;top:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);z-index:999}
-    #posModal .modal{width:760px;max-width:96%;background:#fff;padding:18px;border-radius:12px;box-shadow:0 16px 40px rgba(12,15,30,0.3)}
-    .pos-top{display:flex;justify-content:space-between;align-items:center}
-    .product-list{max-height:340px;overflow:auto;margin-top:10px;border:1px solid #eef2f7;padding:8px;border-radius:8px}
-    .product-item{display:flex;justify-content:space-between;padding:8px;border-radius:8px}
-    .btn-danger{background:#ef4444;color:#fff;border:0;padding:8px 12px;border-radius:8px}
-    /* helper */
-    .muted-2{color:var(--muted-2)}
-    .inline{display:inline-block}
-    .search{width:260px;padding:8px;border-radius:8px;border:1px solid #e6e9ef}
-  </style>
-</head>
-<body>
-  <div class="app">
-    <aside class="sidebar card">
-      <div style="display:flex;gap:12px;align-items:center">
-        <div class="logo">CC</div>
-        <div>
-          <div style="font-weight:700">Copycenter Antar Kita</div>
-          <small class="muted-2">Pencatatan & Kasir</small>
-        </div>
-      </div>
-
-      <div style="margin-top:18px" class="side-links">
-        <button id="nav_dashboard" class="active">Dashboard <small>Ringkasan</small></button>
-        <button id="nav_sales">Penjualan <small>Tambah & riwayat</small></button>
-        <button id="nav_products">Produk <small>Stok & harga</small></button>
-        <button id="nav_reports">Laporan <small>Export / Backup</small></button>
-        <button id="nav_settings">Pengaturan <small>PIN & Auto-backup</small></button>
-      </div>
-
-      <div style="margin-top:20px">
-        <button id="btnOpenPOS" style="width:100%;padding:12px;border-radius:8px;border:2px solid rgba(255,255,255,0.12);background:transparent;color:#fff">Buka Kasir (POS)</button>
-      </div>
-    </aside>
-
-    <main class="content">
-      <header>
-        <div>
-          <h1>Dashboard</h1>
-          <p class="muted">Memantau penjualan, stok, dan laporan</p>
-        </div>
-        <div class="top-actions">
-          <input id="searchBox" class="search" placeholder="Cari: item / keterangan" />
-          <select id="rangeSelect" class="small">
-            <option value="today">Hari ini</option>
-            <option value="week">Minggu</option>
-            <option value="month">Bulan</option>
-            <option value="all">Semua</option>
-          </select>
-          <button id="btnNewTx" class="small">+ Transaksi</button>
-          <button id="btnExport" class="small">Export CSV</button>
-          <button id="btnExportStock" class="small ghost">Export Stok</button>
-          <button id="btnImport" class="small ghost">Import CSV</button>
-          <button id="btnBackup" class="small ghost">Download Backup</button>
-        </div>
-      </header>
-
-      <div class="grid">
-        <section class="card">
-          <!-- Tambah Transaksi -->
-          <h3 style="margin-top:0">Tambah Transaksi</h3>
-          <div style="display:flex;gap:12px;align-items:center">
-            <div style="flex:1">
-              <label>Jenis</label>
-              <select id="txType">
-                <option value="sale">Penjualan (fotokopi / print / produk)</option>
-                <option value="expense">Pengeluaran</option>
-              </select>
-            </div>
-            <div style="width:180px">
-              <label>Filter Kategori</label>
-              <select id="filterCategory">
-                <option value="all">Semua</option>
-              </select>
-            </div>
-          </div>
-
-          <div id="saleForm" style="margin-top:10px">
-            <label>Nama Item / Layanan</label>
-            <input id="itemName" placeholder="Contoh: Fotokopi A4 (1 lembar)">
-            <div class="row" style="margin-top:8px">
-              <div class="col">
-                <label>Jumlah</label>
-                <input id="qty" type="number" min="1" value="1">
-              </div>
-              <div class="col">
-                <label>Harga per Unit (Rp)</label>
-                <input id="price" type="number" min="0" value="1500">
-              </div>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:8px">
-              <button id="btnAddTx" class="">Tambah</button>
-              <button id="btnQuick" class="ghost">Tambah Cepat (Rp 1.500 x 1)</button>
-              <button id="btnStockIn" class="ghost">Stok Masuk</button>
-            </div>
-          </div>
-
-          <div id="expenseForm" style="display:none;margin-top:10px">
-            <label>Deskripsi Pengeluaran</label>
-            <input id="expDesc" placeholder="Contoh: Kertas A4, Tinta">
-            <div class="row" style="margin-top:8px">
-              <div class="col">
-                <label>Kategori</label>
-                <select id="expCat"><option>Operasional</option><option>Perlengkapan</option><option>Gaji</option><option>Lainnya</option></select>
-              </div>
-              <div class="col">
-                <label>Jumlah (Rp)</label>
-                <input id="expAmount" type="number" value="50000">
-              </div>
-            </div>
-            <div style="margin-top:8px">
-              <button id="btnAddExp" class="">Tambah Pengeluaran</button>
-            </div>
-          </div>
-
-          <div style="margin-top:18px">
-            <h4 style="margin:0 0 8px">Ringkasan</h4>
-            <div class="totals">
-              <div class="stat"><h3>Total Pemasukan</h3><p id="totalIncome">Rp 0</p></div>
-              <div class="stat"><h3>Total Pengeluaran</h3><p id="totalExpense">Rp 0</p></div>
-              <div class="stat"><h3>Keuntungan</h3><p id="totalProfit">Rp 0</p></div>
-            </div>
-          </div>
-
-          <div style="margin-top:18px">
-            <h4>Filter & Cari</h4>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input id="searchTx" placeholder="Cari keterangan..." />
-              <select id="quickRange"><option value="today">Hari ini</option><option value="week">Minggu</option><option value="month">Bulan</option><option value="all">Semua</option></select>
-              <button id="btnFilter" class="ghost">Filter</button>
-            </div>
-          </div>
-        </section>
-
-        <aside class="card right-panel">
-          <h3 style="margin-top:0">Buku Kas / Ledger</h3>
-          <div id="ledgerQuickFilter" style="margin-bottom:8px">
-            <label class="muted">Tampilkan</label>
-            <select id="ledgerRange"><option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="all">Semua</option></select>
-          </div>
-          <div style="max-height:520px;overflow:auto">
-            <table id="tableSales"><thead><tr><th>Tgl</th><th>Keterangan</th><th>Metode</th><th>Debit</th><th>Kredit</th><th></th></tr></thead><tbody></tbody></table>
-          </div>
-
-          <div style="margin-top:12px;display:flex;gap:8px">
-            <button id="btnToday" class="small">Filter Hari Ini</button>
-            <button id="btnAll" class="small ghost">Tampilkan Semua</button>
-          </div>
-
-          <footer style="margin-top:10px" class="muted">Data transaksi & stok tersimpan di browser (localStorage). Backup via Export CSV / Download Backup.</footer>
-        </aside>
-      </div>
-    </main>
-  </div>
-
-  <!-- POS Modal -->
-  <div id="posModal">
-    <div class="modal">
-      <div class="pos-top">
-        <h3>POS — Kasir Cepat</h3>
-        <div>
-          <button id="posClose" class="ghost">Tutup</button>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:12px">
-        <div style="flex:1">
-          <label>Cari produk</label>
-          <input id="posSearch" placeholder="Cari produk...">
-          <div class="product-list" id="posProducts"></div>
-        </div>
-        <div style="width:320px">
-          <label>Keranjang</label>
-          <div id="posCart" style="min-height:150px;border:1px solid #eef2f7;padding:8px;border-radius:8px"></div>
-          <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
-            <button id="posPay" class="small success" style="background:#0f6b63;color:#fff">Bayar</button>
-            <button id="posClear" class="ghost">Kosongkan</button>
-          </div>
-        </div>
+<!-- ===== Sidebar (Copy & replace existing sidebar) ===== -->
+<aside id="appSidebar" class="sidebar">
+  <div class="sidebar-top">
+    <div class="logo-wrap">
+      <div class="logo">CC</div>
+      <div class="logo-text">
+        <strong>Copycenter Antar Kita</strong>
+        <small>Pencatatan & Kasir</small>
       </div>
     </div>
+
+    <button id="sidebarToggle" class="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
   </div>
 
+  <nav class="side-links" role="navigation" aria-label="Main menu">
+    <button data-page="dashboard" id="nav_dashboard" class="nav-btn active">📊 Dashboard <small>Ringkasan</small></button>
+    <button data-page="sales" id="nav_sales" class="nav-btn">💰 Penjualan <small>Tambah & riwayat</small></button>
+    <button data-page="products" id="nav_products" class="nav-btn">📦 Produk <small>Stok & harga</small></button>
+    <button data-page="reports" id="nav_reports" class="nav-btn">📑 Laporan <small>Export / Backup</small></button>
+    <button data-page="settings" id="nav_settings" class="nav-btn">⚙️ Pengaturan <small>PIN & Auto-backup</small></button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button id="btnOpenPOS" class="pos-btn">🧾 Buka Kasir (POS)</button>
+  </div>
+</aside>
+
+<!-- ===== Sidebar Styles (add into your <style> or CSS file) ===== -->
+<style>
+/* ---------- layout / container ---------- */
+.sidebar {
+  width: 240px;
+  min-width: 80px;
+  max-width: 240px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  padding:18px;
+  gap:12px;
+  background: linear-gradient(180deg,#0f6b63 0%,#0b524d 100%);
+  color:#fff;
+  border-top-right-radius:12px;
+  border-bottom-right-radius:12px;
+  box-shadow:3px 0 12px rgba(0,0,0,0.08);
+  transition:all .28s ease;
+  position:relative;
+}
+
+/* top row w/ toggle for small screens */
+.sidebar-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo{width:56px;height:56px;border-radius:12px;background:#fff;color:#0f6b63;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px}
+.logo-text strong{display:block;font-size:15px;color:#fff}
+.logo-text small{display:block;color:#cdebe6;font-size:12px}
+
+/* toggle for mobile collapse */
+.sidebar-toggle{
+  display:none;
+  background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer;padding:6px 8px;border-radius:8px;
+}
+.sidebar-toggle:hover{background:rgba(255,255,255,0.06)}
+
+/* links */
+.side-links{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.side-links .nav-btn{
+  background:transparent;border:0;color:#eaf5f4;text-align:left;padding:10px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;flex-direction:column;gap:2px;transition:all .18s ease;
+}
+.side-links .nav-btn small{color:#b7e1d9;font-size:12px}
+.side-links .nav-btn:hover{background:rgba(255,255,255,0.10);transform:translateX(6px)}
+.side-links .nav-btn.active{background:rgba(255,255,255,0.18);font-weight:600;color:#fff;transform:none}
+
+/* active indicator (left stripe) */
+.side-links .nav-btn.active::before{
+  content:"";position:absolute;width:4px;height:40%;left:0;border-top-right-radius:4px;border-bottom-right-radius:4px;background:#fff;transform:translateX(-12px);
+}
+
+/* footer */
+.sidebar-footer{margin-top:8px}
+#btnOpenPOS.pos-btn{
+  width:100%;padding:10px;border-radius:8px;border:2px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.07);color:#fff;font-weight:700;cursor:pointer;
+}
+#btnOpenPOS.pos-btn:hover{background:#fff;color:#0f6b63;box-shadow:0 0 8px rgba(255,255,255,0.25)}
+
+/* COLLAPSED (icon-only) */
+.sidebar.collapsed{width:84px;padding-left:12px;padding-right:12px}
+.sidebar.collapsed .logo-text{display:none}
+.sidebar.collapsed .side-links .nav-btn{font-size:0;text-indent:-9999px;padding:12px;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center}
+.sidebar.collapsed .side-links .nav-btn small{display:none}
+.sidebar.collapsed .logo{width:48px;height:48px}
+
+/* MOBILE drawer */
+@media (max-width:920px){
+  .sidebar{position:fixed;left:-320px;top:0;bottom:0;z-index:1400;overflow:auto;width:260px}
+  .sidebar.open{left:0}
+  .sidebar-toggle{display:inline-block}
+}
+/* ensure sidebar doesn't overflow in small screens in non-drawer mode */
+@media (max-width:760px){
+  .logo-text strong{font-size:14px}
+}
+
+/* small visual tweaks */
+.side-links .nav-btn{position:relative}
+</style>
+
+<!-- ===== Sidebar JS (paste before </body>) ===== -->
 <script>
-// --- GLOBAL FIX: declare chartSales early to avoid "before initialization" error
-let chartSales = null;
+(function(){
+  const sidebar = document.getElementById('appSidebar');
+  const toggle = document.getElementById('sidebarToggle');
+  const btnPOS = document.getElementById('btnOpenPOS');
+  const navBtns = Array.from(document.querySelectorAll('.side-links .nav-btn'));
 
-// simple helper $
-const $ = id => document.getElementById(id);
+  // helper: set active UI
+  function setActive(page){
+    navBtns.forEach(b=>{
+      if(b.dataset.page === page) b.classList.add('active'); else b.classList.remove('active');
+    });
+  }
 
-// load storage
-let data = JSON.parse(localStorage.getItem('copycenter_data') || '[]');
-let products = JSON.parse(localStorage.getItem('copycenter_products') || '[]');
+  // try to call app's page switcher (safe)
+  function safeShowPage(name){
+    try{
+      if(typeof safeShowPage === 'function'){ safeShowPage(name); return; } // if app defines safeShowPage
+    }catch(e){}
+    try{
+      if(window.showPage && typeof window.showPage === 'function'){ window.showPage(name); return; }
+    }catch(e){}
+    // fallback: log
+    console.log('Sidebar: showPage("' + name + '") not found in app. Only UI toggled.');
+  }
 
-// formatter
-function formatIDR(n){
-  if(!n && n!==0) return 'Rp 0';
-  return 'Rp ' + Number(n).toLocaleString('id-ID');
-}
-
-// save
-function saveAll(){
-  localStorage.setItem('copycenter_data', JSON.stringify(data));
-  localStorage.setItem('copycenter_products', JSON.stringify(products));
-  renderLedger();
-  renderSummary();
-}
-
-// render ledger (with filter)
-function renderLedger(){
-  const tbody = document.querySelector('#tableSales tbody');
-  tbody.innerHTML = '';
-  const mode = $('ledgerRange').value || 'all';
-  const now = new Date();
-  const rows = data.slice().reverse().filter(tx=>{
-    if(mode==='all') return true;
-    const d = new Date(tx.t);
-    if(mode==='daily') return d.getFullYear()==now.getFullYear() && d.getMonth()==now.getMonth() && d.getDate()==now.getDate();
-    if(mode==='weekly') return (now - d)/(1000*60*60*24) <= 7;
-    return true;
+  // click handlers for nav buttons
+  navBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const page = btn.dataset.page || '';
+      setActive(page);
+      safeShowPage(page);
+      // on small screens, auto-close drawer
+      if(window.innerWidth <= 920 && sidebar.classList.contains('open')) sidebar.classList.remove('open');
+    });
   });
-  rows.forEach((tx,i)=>{
-    const tr = document.createElement('tr');
-    const date = new Date(tx.t).toLocaleString();
-    const desc = tx.type==='sale' ? `${tx.item} (x${tx.qty||1})` : tx.desc || 'Pengeluaran';
-    const debit = tx.type==='sale' ? formatIDR(tx.total) : '';
-    const credit = tx.type==='expense' ? formatIDR(tx.amount) : '';
-    tr.innerHTML = `<td>${date}</td><td>${desc}</td><td>${tx.method||''}</td><td>${debit}</td><td>${credit}</td><td><button data-i="${data.length-1-i}" class="small ghost">Hapus</button></td>`;
-    tbody.appendChild(tr);
+
+  // sidebar collapse: double-click logo or click toggle
+  toggle && toggle.addEventListener('click', ()=>{
+    // mobile: open drawer
+    if(window.innerWidth <= 920){
+      sidebar.classList.toggle('open');
+      return;
+    }
+    sidebar.classList.toggle('collapsed');
   });
-  tbody.querySelectorAll('button').forEach(b=>{
-    b.addEventListener('click', e=>{
-      const idx = Number(e.currentTarget.dataset.i);
-      if(confirm('Hapus transaksi?')){ data.splice(idx,1); saveAll(); }
-    })
+
+  // allow double-click logo to collapse for desktop
+  const logo = sidebar.querySelector('.logo');
+  if(logo){
+    logo.addEventListener('dblclick', ()=>{
+      if(window.innerWidth > 920) sidebar.classList.toggle('collapsed');
+    });
+  }
+
+  // POS button: attempt to call POS open function or show page 'pos'/'sales'
+  btnPOS && btnPOS.addEventListener('click', ()=>{
+    // try app-defined openPOS / openPos / showPage
+    if(typeof window.openPOS === 'function'){ window.openPOS(); return; }
+    if(typeof window.openPos === 'function'){ window.openPos(); return; }
+    // fallback to showPage('sales') or showPage('pos')
+    safeShowPage('sales');
+    safeShowPage('pos');
+    setActive('sales');
+    // if mobile drawer open -> close
+    if(window.innerWidth <= 920 && sidebar.classList.contains('open')) sidebar.classList.remove('open');
   });
-}
 
-// summary
-function renderSummary(){
-  let income=0, expense=0;
-  data.forEach(tx=>{
-    if(tx.type==='sale') income += Number(tx.total||0);
-    if(tx.type==='expense') expense += Number(tx.amount||0);
-  });
-  $('totalIncome').textContent = formatIDR(income);
-  $('totalExpense').textContent = formatIDR(expense);
-  $('totalProfit').textContent = formatIDR(income - expense);
-}
-
-// initialize products sample if empty
-if(!products.length){
-  products = [
-    {id:1,name:'Fotokopi B/W',cat:'Fotokopi',price:1500,stock:0},
-    {id:2,name:'Fotokopi Warna',cat:'Fotokopi',price:4000,stock:0},
-    {id:3,name:'Print Pas Foto',cat:'Fotokopi',price:20000,stock:0},
-    {id:4,name:'Pulpen',cat:'ATK',price:3000,stock:0},
-    {id:5,name:'Buku Tulis',cat:'ATK',price:6000,stock:0},
-    {id:6,name:'Aqua 600ml',cat:'Minuman',price:5000,stock:0},
-    {id:7,name:'Rokok Surya Besar',cat:'Rokok',price:36000,stock:0},
-    {id:8,name:'Rokok Surya Kecil',cat:'Rokok',price:27000,stock:0}
-  ];
-  saveAll();
-}
-
-// render product quick
-function renderProductShort(){
-  const container = document.querySelector('.right-panel .card') || document.querySelector('.card');
-  // not necessary, we have short product on dashboard right
-  const listArea = document.querySelector('.product-short');
-  // fill filterCategory select
-  const catSet = new Set(products.map(p=>p.cat));
-  const sel = $('filterCategory');
-  sel.innerHTML = '<option value="all">Semua</option>';
-  [...catSet].forEach(c=> sel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`));
-}
-
-// add transaction handlers
-$('txType').addEventListener('change', e=>{
-  if(e.target.value==='sale'){ $('saleForm').style.display='block'; $('expenseForm').style.display='none'; }
-  else { $('saleForm').style.display='none'; $('expenseForm').style.display='block'; }
-});
-
-$('btnQuick').addEventListener('click', ()=>{
-  $('txType').value='sale'; $('txType').dispatchEvent(new Event('change'));
-  $('itemName').value='Fotokopi (1 lembar)'; $('qty').value=1; $('price').value=1500;
-  addSale();
-});
-
-$('btnAddTx').addEventListener('click', addSale);
-function addSale(){
-  const item = $('itemName').value.trim() || 'Penjualan';
-  const qty = Number($('qty').value) || 1;
-  const price = Number($('price').value) || 0;
-  const total = qty*price;
-  data.push({type:'sale', item, qty, price, total, t: new Date().toISOString(), method:'Tunai'});
-  // update stock if product exists
-  const p = products.find(p=>p.name.toLowerCase()===item.toLowerCase());
-  if(p) p.stock = Number(p.stock||0) - qty;
-  saveAll();
-  clearSaleFields();
-  alert('Transaksi penjualan tersimpan.');
-}
-
-$('btnAddExp').addEventListener('click', ()=>{
-  const desc = $('expDesc').value.trim() || 'Pengeluaran';
-  const cat = $('expCat').value || 'Lainnya';
-  const amount = Number($('expAmount').value) || 0;
-  data.push({type:'expense', desc, cat, amount, t: new Date().toISOString()});
-  saveAll();
-  $('expDesc').value=''; $('expAmount').value=50000;
-  alert('Pengeluaran tersimpan.');
-});
-
-function clearSaleFields(){ $('itemName').value=''; $('qty').value=1; $('price').value=1500; }
-
-// filters
-$('ledgerRange').addEventListener('change', renderLedger);
-$('btnToday').addEventListener('click', ()=>{ $('ledgerRange').value='daily'; renderLedger()});
-$('btnAll').addEventListener('click', ()=>{ $('ledgerRange').value='all'; renderLedger()});
-$('btnFilter').addEventListener('click', renderLedger);
-
-// export CSV
-$('btnExport').addEventListener('click', ()=>{
-  if(!data.length){ alert('Tidak ada data untuk diexport.'); return; }
-  const rows = [['tanggal','tipe','keterangan','debit','kredit']];
-  data.forEach(tx=>{
-    const t = new Date(tx.t).toLocaleString();
-    if(tx.type==='sale') rows.push([t,'Penjualan',tx.item + ' x'+tx.qty,tx.total,'']);
-    else rows.push([t,'Pengeluaran',tx.desc + ' ('+ (tx.cat||'') +')','',tx.amount]);
-  });
-  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `copycenter_data_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a); a.click(); a.remove();
-});
-
-// Download Backup (same CSV but named backup)
-$('btnBackup').addEventListener('click', ()=>$('btnExport').click());
-
-// import CSV (basic)
-$('btnImport').addEventListener('click', ()=>{
-  const input = document.createElement('input'); input.type='file'; input.accept='.csv';
-  input.onchange = async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    const text = await f.text();
-    const rows = parseCSV(text);
-    if(!rows.length) return alert('CSV kosong / tidak valid');
-    // assume same format as export
-    const imported=[];
-    for(let i=1;i<rows.length;i++){
-      const r = rows[i];
-      if(!r || r.length<4) continue;
-      const tRaw = r[0]||'';
-      const type = (r[1]||'').toLowerCase();
-      const desc = r[2]||'';
-      const debit = (r[3]||'').replace(/[^0-9\.\-]/g,'');
-      const credit = (r[4]||'').replace(/[^0-9\.\-]/g,'');
-      let t = new Date(tRaw); if(isNaN(t)) t = new Date();
-      if(debit && Number(debit)>0 || type.includes('penjualan') || type.includes('sale')){
-        const m = desc.match(/(.*)\sx(\d+)$/i);
-        let item = desc; let qty = 1;
-        if(m){ item = m[1].trim(); qty = Number(m[2]); }
-        const total = Number(debit) || 0;
-        imported.push({type:'sale', item, qty, price: Math.round(total/Math.max(1,qty)), total, t: t.toISOString()});
-      } else if(credit && Number(credit)>0 || type.includes('pengeluaran') || type.includes('expense')){
-        imported.push({type:'expense', desc, cat:'Lainnya', amount:Number(credit)||0, t: t.toISOString()});
+  // close drawer when clicking outside (mobile)
+  document.addEventListener('click', (e)=>{
+    if(window.innerWidth <= 920 && sidebar.classList.contains('open')){
+      if(!sidebar.contains(e.target) && !toggle.contains(e.target)){
+        sidebar.classList.remove('open');
       }
     }
-    if(!imported.length) return alert('Tidak ada transaksi valid pada CSV');
-    if(confirm('Ganti semua data yang ada dengan import? OK = Ganti, Cancel = Tambah/Merge')){
-      data = imported;
-    } else {
-      data = data.concat(imported);
+  });
+
+  // keyboard: press "m" to toggle collapse for convenience
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'm' && window.innerWidth > 920){
+      sidebar.classList.toggle('collapsed');
     }
-    saveAll(); alert('Import selesai: ' + imported.length + ' transaksi.');
-  };
-  input.click();
-});
-
-function parseCSV(text){
-  const rows=[]; let cur=''; let row=[]; let inQuotes=false;
-  for(let i=0;i<text.length;i++){
-    const ch=text[i], nxt=text[i+1];
-    if(ch==='"'){
-      if(inQuotes && nxt==='"'){ cur+='"'; i++; continue; }
-      inQuotes = !inQuotes; continue;
-    }
-    if(ch===',' && !inQuotes){ row.push(cur); cur=''; continue; }
-    if((ch==='\n' || ch==='\r') && !inQuotes){ if(cur!==''||row.length>0){ row.push(cur); rows.push(row); row=[]; cur=''; } continue; }
-    cur+=ch;
-  }
-  if(cur!==''||row.length>0){ row.push(cur); rows.push(row); }
-  return rows.map(r=>r.map(c=>c.trim()));
-}
-
-// -- POS Modal logic (basic)
-function openPOS(){ $('posModal').style.display='flex'; renderPOSProducts(); }
-function closePOS(){ $('posModal').style.display='none'; clearPOSCart(); }
-$('btnOpenPOS').addEventListener('click', openPOS);
-$('posClose').addEventListener('click', closePOS);
-$('posModal').addEventListener('click', e=>{ if(e.target.id==='posModal') closePOS(); });
-
-const posCart = [];
-function renderPOSProducts(filter=''){
-  const container = $('posProducts'); container.innerHTML='';
-  const list = products.filter(p=>p.name.toLowerCase().includes(filter.toLowerCase()));
-  list.forEach(p=>{
-    const div = document.createElement('div'); div.className='product-item';
-    div.innerHTML = `<div><strong>${p.name}</strong><div style="font-size:12px;color:#6b7280">${p.cat}</div></div><div><div>${formatIDR(p.price)}</div><button class="small">Pilih</button></div>`;
-    div.querySelector('button').addEventListener('click', ()=>{ addToCart(p); });
-    container.appendChild(div);
   });
-}
-$('posSearch').addEventListener('input', e=> renderPOSProducts(e.target.value));
 
-function addToCart(p){
-  const found = posCart.find(x=>x.id===p.id);
-  if(found) found.qty++;
-  else posCart.push({id:p.id,name:p.name,price:p.price,qty:1});
-  renderCart();
-}
-function renderCart(){
-  const el = $('posCart'); el.innerHTML='';
-  if(!posCart.length){ el.innerHTML='<div class="muted">Tidak ada item</div>'; return; }
-  posCart.forEach((c,idx)=>{
-    const row = document.createElement('div'); row.style.display='flex'; row.style.justifyContent='space-between'; row.style.marginBottom='6px';
-    row.innerHTML = `<div>${c.name} x${c.qty}</div><div>${formatIDR(c.price*c.qty)}</div>`;
-    el.appendChild(row);
-  });
-}
-function clearPOSCart(){ posCart.length=0; renderCart(); }
+  // initial: if viewport small -> collapsed (hide text) by default
+  if(window.innerWidth <= 920) sidebar.classList.add('collapsed');
 
-$('posClear').addEventListener('click', ()=>{ if(confirm('Kosongkan keranjang?')) clearPOSCart(); });
-
-$('posPay').addEventListener('click', ()=>{
-  if(!posCart.length) return alert('Keranjang kosong');
-  // convert cart to transactions
-  posCart.forEach(c=>{
-    data.push({type:'sale', item:c.name, qty:c.qty, price:c.price, total:c.qty*c.price, t:new Date().toISOString(), method:'Tunai'});
-    // decrease product stock if exists
-    const p = products.find(x=>x.id===c.id); if(p) p.stock = Number(p.stock||0) - c.qty;
-  });
-  saveAll();
-  clearPOSCart();
-  closePOS();
-  alert('Transaksi berhasil tersimpan di Buku Kas.');
-});
-
-// initial render
-renderLedger(); renderSummary(); renderProductShort();
-
-// dashboard rendering (light)
-function renderDashboard(){
-  // try to draw chart; chartSales declared early
-  try{
-    const ctx = document.createElement('canvas');
-    const node = document.querySelector('.card');
-    // add chart only once
-    const chartHolder = document.querySelector('.card .chart') || document.createElement('div');
-    chartHolder.className = 'chart';
-    if(!chartHolder.parentElement) node.appendChild(chartHolder);
-    // we won't include Chart.js here; keep placeholder
-    chartHolder.innerHTML = '<div style="height:160px;border:1px dashed #e6e9ef;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9aa9a5">Grafik Penjualan</div>';
-  } catch(e){ console.warn('renderDashboard chart error', e); }
-}
-renderDashboard();
-
-// NAV behavior (simple show/hide)
-function showPage(name){
-  // map
-  const pages = {
-    dashboard: function(){ /* currently everything is on single page */ },
-    sales: function(){ window.scrollTo({top:0,behavior:'smooth'}) },
-    products: function(){ window.scrollTo({top:0,behavior:'smooth'}) },
-    reports: function(){ window.scrollTo({top:0,behavior:'smooth'}) },
-    settings: function(){ window.scrollTo({top:0,behavior:'smooth'}) }
-  };
-  // update active
-  document.querySelectorAll('.side-links button').forEach(b=>b.classList.remove('active'));
-  const btn = document.getElementById('nav_'+name);
-  if(btn) btn.classList.add('active');
-  if(pages[name]) pages[name]();
-}
-['dashboard','sales','products','reports','settings'].forEach(n=>{
-  const el = document.getElementById('nav_'+n);
-  if(el) el.addEventListener('click', ()=> showPage(n));
-});
-
-// quick new tx button
-$('btnNewTx').addEventListener('click', ()=> window.scrollTo({top:0,behavior:'smooth'}));
-
-// diagnostics: fix possible chartSales ReferenceError
-if(typeof chartSales==='undefined') chartSales = null;
-
-// expose small API for console quick test
-window.cc = {data, products, saveAll, renderLedger};
-
-// end
+  // expose helper for debugging (optional)
+  window._ccSidebar = { setActive, toggleCollapse: ()=>sidebar.classList.toggle('collapsed') };
+})();
 </script>
-</body>
-</html>
