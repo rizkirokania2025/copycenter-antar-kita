@@ -1,736 +1,131 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Copycenter Antar Kita — POS & Pencatatan Lengkap</title>
-
-  <!-- Chart.js for charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    :root{--bg:#f6fbfa;--card:#fff;--accent:#0f6b63;--accent-2:#0b534a;--muted:#6b7280;--danger:#ef4444;--success:#16a34a;}
-    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{margin:0;background:var(--bg);color:#0f172a}
-    .app{display:flex;min-height:100vh}
-    /* Sidebar */
-    .sidebar{width:260px;background:linear-gradient(180deg,#073a36,#0b534a);color:#fff;padding:18px;flex-shrink:0}
-    .brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-    .logo{width:52px;height:52px;border-radius:10px;background:#0f6b63;display:flex;align-items:center;justify-content:center;font-weight:700}
-    .brand h1{font-size:18px;margin:0}
-    .nav{margin-top:18px}
-    .nav button{display:flex;flex-direction:column;gap:4px;padding:10px;border-radius:8px;border:0;background:transparent;color:#e8f6f4;cursor:pointer;text-align:left}
-    .nav button.active{background:rgba(255,255,255,0.06)}
-    .small{font-size:13px;padding:6px 8px;border-radius:8px}
-    .ghost{background:transparent;border:1px solid #e6e9ef}
-    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(12,15,30,0.06)}
-    .main{flex:1;padding:18px;min-width:0}
-    .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
-    .top-actions{display:flex;gap:8px;align-items:center}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-    @media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)} .sidebar{display:none}}
-    @media(max-width:640px){.grid{grid-template-columns:1fr}}
-    .stat{padding:18px;border-radius:10px;text-align:center}
-    .stat h3{margin:0;font-size:14px;color:var(--muted)}
-    .stat p{margin:8px 0 0;font-size:18px;font-weight:700}
-    .panel{display:flex;gap:12px}
-    .left-panel{flex:1}
-    .right-panel{width:420px;flex-shrink:0}
-    @media(max-width:980px){.panel{flex-direction:column}.right-panel{width:100%}}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid #eef2f7;font-size:13px;text-align:left}
-    th{background:#fafafa}
-    input,select,textarea{padding:8px;border-radius:8px;border:1px solid #e6e9ef}
-    .filter-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
-    .center{text-align:center}
-    /* Kasir mode modal */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:999}
-    .pos{width:920px;background:var(--card);border-radius:12px;padding:18px;display:flex;gap:12px}
-    .pos-left{flex:1}
-    .pos-right{width:360px}
-    .quick-btn{padding:10px;border-radius:8px;border:0;background:#0f6b63;color:#fff;cursor:pointer;margin:6px}
-    .quick-grid{display:flex;flex-wrap:wrap}
-    .receipt{font-family:monospace;font-size:12px;white-space:pre-wrap}
-    .muted{color:var(--muted);font-size:13px}
-  </style>
-</head>
-<body>
-  <div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar card">
-      <div class="brand">
-        <div class="logo">CC</div>
-        <div>
-          <h1>Copycenter Antar Kita</h1>
-          <small style="color:#cfeee9">Pencatatan & Kasir</small>
-        </div>
-      </div>
-
-      <nav class="nav">
-        <button id="nav_dashboard" class="active">Dashboard <small>Ringkasan</small></button>
-        <button id="nav_sales">Penjualan <small>Tambah & riwayat</small></button>
-        <button id="nav_products">Produk <small>Stok & harga</small></button>
-        <button id="nav_reports">Laporan <small>Export / Backup</small></button>
-        <button id="nav_settings">Pengaturan <small>PIN & Auto-backup</small></button>
-        <div style="margin-top:12px">
-          <button id="btnOpenPOS" class="small" style="width:100%;background:#0f6b63;color:#fff;border:0">Buka Kasir (POS)</button>
-        </div>
-      </nav>
-    </aside>
-
-    <!-- Main -->
-    <main class="main">
-      <div class="topbar">
-        <div>
-          <h2 style="margin:0">Dashboard</h2>
-          <div class="muted">Memantau penjualan, stok, dan laporan</div>
-        </div>
-
-        <div class="top-actions">
-          <input id="searchGlobal" placeholder="Cari: item / keterangan" style="width:260px" />
-          <select id="viewDate">
-            <option value="today">Hari ini</option>
-            <option value="7">7 hari</option>
-            <option value="30">30 hari</option>
-            <option value="all">Semua</option>
-          </select>
-          <button id="btnNewTx" class="small">+ Transaksi</button>
-        </div>
-      </div>
-
-      <!-- Dashboard page -->
-      <section id="page_dashboard">
-        <div class="grid">
-          <div class="card stat">
-            <h3>Total Pemasukan</h3><p id="summary_total">Rp 0</p>
-          </div>
-          <div class="card stat">
-            <h3>Total Pengeluaran</h3><p id="summary_expense">Rp 0</p>
-          </div>
-          <div class="card stat">
-            <h3>Keuntungan</h3><p id="summary_profit">Rp 0</p>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:12px">
-          <div class="card" style="flex:1">
-            <h4>Grafik Penjualan (7 hari)</h4>
-            <canvas id="chartSales" height="120"></canvas>
-          </div>
-          <div class="card" style="width:360px">
-            <h4>Top Produk</h4>
-            <div id="topProducts" style="max-height:200px;overflow:auto"></div>
-            <hr />
-            <h4>Ringkasan Cepat</h4>
-            <div><small class="muted">Transaksi hari ini</small><div id="stat_count">0 transaksi</div></div>
-          </div>
-        </div>
-
-        <div style="margin-top:12px" class="panel">
-          <div class="left-panel card">
-            <h4>Transaksi Terbaru</h4>
-            <div style="max-height:420px;overflow:auto">
-              <table id="tableSales">
-                <thead><tr><th>Tgl</th><th>Keterangan</th><th>Metode</th><th>Debit</th><th>Kredit</th><th></th></tr></thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="right-panel card">
-            <h4>Produk Singkat</h4>
-            <div id="miniProducts" style="max-height:420px;overflow:auto"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Sales page -->
-      <section id="page_sales" style="display:none">
-        <div class="card">
-          <h3>Tambah Transaksi Manual</h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <select id="salesType"><option value="sale">Penjualan</option><option value="expense">Pengeluaran</option></select>
-            <input id="salesItem" placeholder="Nama item / layanan" style="flex:1" />
-            <input id="salesQty" type="number" value="1" style="width:90px" />
-            <input id="salesPrice" type="number" value="1500" style="width:130px" />
-            <select id="salesPayment"><option>Tunai</option><option>Transfer</option><option>OVO</option><option>GOPAY</option><option>Kartu</option></select>
-            <button id="btnAddSale" class="small">Tambah</button>
-            <button id="btnQuick" class="small ghost">Tambah Cepat (fotokopi)</button>
-          </div>
-        </div>
-
-        <div style="height:12px"></div>
-
-        <div class="card">
-          <h3>Daftar Transaksi</h3>
-          <div style="max-height:420px;overflow:auto">
-            <table id="tableAll"><thead><tr><th>Tgl</th><th>Keterangan</th><th>Kategori</th><th>Jumlah</th><th>Harga</th><th>Total</th><th>Metode</th><th></th></tr></thead><tbody></tbody></table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Products -->
-      <section id="page_products" style="display:none">
-        <div class="card">
-          <h3>Produk & Stok</h3>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <input id="prodName" placeholder="Nama produk" />
-            <input id="prodCat" placeholder="Kategori" style="width:130px" />
-            <input id="prodPrice" type="number" placeholder="Harga" style="width:120px" />
-            <input id="prodStock" type="number" value="0" style="width:90px" />
-            <button id="btnAddProd" class="small">Tambah Produk</button>
-          </div>
-
-          <div style="margin-top:12px;max-height:420px;overflow:auto">
-            <table id="tableProd">
-              <thead><tr><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th></th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Reports -->
-      <section id="page_reports" style="display:none">
-        <div class="card">
-          <h3>Backup & Laporan</h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <button id="btnExportCsv" class="small">Export CSV</button>
-            <button id="btnExportStock" class="small ghost">Export Stok</button>
-            <button id="btnDownloadBackup" class="small ghost">Download Backup JSON</button>
-            <input id="importBackupFile" type="file" accept=".json,.csv" style="display:none"/>
-            <button id="btnImport" class="small ghost">Import CSV/JSON</button>
-            <button id="btnDownloadReport" class="small">Download Laporan Harian</button>
-          </div>
-          <div style="margin-top:10px" class="muted">Catatan: untuk kirim ke Google Drive atau Email, gunakan file hasil download di atas.</div>
-        </div>
-      </section>
-
-      <!-- Settings -->
-      <section id="page_settings" style="display:none">
-        <div class="card">
-          <h3>Pengaturan</h3>
-          <div style="margin-top:8px">
-            <div style="display:flex;gap:8px;align-items:center">
-              <label>PIN saat ini:</label><div id="curPin" style="font-weight:700"></div>
-              <button id="btnChangePin" class="small ghost">Ganti PIN</button>
-            </div>
-            <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
-              <label>Auto-backup (jam):</label>
-              <input id="autoBackupHours" type="number" value="6" style="width:80px" />
-              <button id="btnSetBackup" class="small">Set</button>
-              <button id="btnDisableBackup" class="small ghost">Matikan</button>
-            </div>
-            <div style="margin-top:12px">
-              <button id="btnClearAll" class="small" style="background:#ef4444;color:#fff;border:0">Hapus Semua Data</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </main>
-  </div>
-
-  <!-- POS modal (overlay) -->
-  <div id="overlay" class="overlay">
-    <div class="pos card" role="dialog" aria-modal="true">
-      <div class="pos-left">
-        <h3>Kasir — Quick Mode</h3>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input id="posItem" placeholder="Nama item / produk" style="flex:1" />
-          <input id="posQty" type="number" value="1" style="width:80px" />
-          <input id="posPrice" type="number" value="1500" style="width:120px" />
-        </div>
-
-        <div class="muted">Tombol nominal cepat:</div>
-        <div class="quick-grid" style="margin:8px 0">
-          <button class="quick-btn" data-price="1500">Rp 1.500</button>
-          <button class="quick-btn" data-price="3000">Rp 3.000</button>
-          <button class="quick-btn" data-price="5000">Rp 5.000</button>
-          <button class="quick-btn" data-price="10000">Rp 10.000</button>
-          <button class="quick-btn" data-price="20000">Rp 20.000</button>
-          <button class="quick-btn" data-price="50000">Rp 50.000</button>
-        </div>
-
-        <div style="display:flex;gap:8px;align-items:center;margin-top:10px">
-          <select id="posPayment" style="width:150px">
-            <option>Tunai</option><option>Transfer</option><option>OVO</option><option>GOPAY</option><option>Kartu</option>
-          </select>
-          <button id="posAdd" class="small" style="background:#0f6b63;color:#fff;border:0">Bayar & Tambah</button>
-          <button id="posCancel" class="small ghost">Tutup</button>
-        </div>
-
-        <div style="margin-top:12px">
-          <h4>Keranjang (sementara)</h4>
-          <div id="posCart" style="max-height:220px;overflow:auto"></div>
-        </div>
-      </div>
-
-      <div class="pos-right">
-        <h4>Struk / Preview</h4>
-        <div id="posReceipt" class="receipt" style="max-height:520px;overflow:auto;border:1px dashed #eee;padding:8px"></div>
-        <div style="margin-top:8px;display:flex;gap:8px">
-          <button id="posPrint" class="small">Cetak Struk</button>
-          <button id="posClearCart" class="small ghost">Kosongkan</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<!-- --- Paste ini tepat sebelum akhir file index.html, di dalam <script> utama --- -->
 <script>
-/* =========================
-   Copycenter Antar Kita - Full POS + Reports
-   - stores: copycenter_data, copycenter_products, copycenter_pin
-   ========================= */
 (function(){
+  // helper select
   const $ = id => document.getElementById(id);
 
-  // keys
-  const K_TX = 'copycenter_data';
-  const K_PROD = 'copycenter_products';
-  const K_PIN = 'copycenter_pin';
-
-  // load or default
-  let data = JSON.parse(localStorage.getItem(K_TX) || '[]');
-  let products = JSON.parse(localStorage.getItem(K_PROD) || 'null') || [
-    {id:'p1',name:'Fotokopi B/W',category:'Fotokopi',price:1500,stock:0},
-    {id:'p2',name:'Fotokopi Warna',category:'Fotokopi',price:4000,stock:0},
-    {id:'p3',name:'Print Pas Foto',category:'Fotokopi',price:20000,stock:0},
-    {id:'p4',name:'Pulpen',category:'ATK',price:3000,stock:0},
-    {id:'p5',name:'Aqua 600ml',category:'Minuman',price:5000,stock:10},
-  ];
-  if(!localStorage.getItem(K_PROD)) localStorage.setItem(K_PROD, JSON.stringify(products));
-  if(!localStorage.getItem(K_PIN)) localStorage.setItem(K_PIN, '1234');
-
-  // helpers
-  function fmt(n){ if(!n && n!==0) return 'Rp 0'; return 'Rp ' + Number(n).toLocaleString('id-ID')}
-  function now(){ return new Date().toISOString(); }
-  function parseDate(s){ const d = new Date(s); return isNaN(d)? new Date(): d; }
-  function saveAll(){ localStorage.setItem(K_TX, JSON.stringify(data)); localStorage.setItem(K_PROD, JSON.stringify(products)); }
-
-  // navigation
-  const pages = {
-    dashboard: $('page_dashboard'),
-    sales: $('page_sales'),
-    products: $('page_products'),
-    reports: $('page_reports'),
-    settings: $('page_settings')
-  };
-  function showPage(name){
-    Object.values(pages).forEach(p=>p.style.display='none');
-    pages[name].style.display='block';
-    ['nav_dashboard','nav_sales','nav_products','nav_reports','nav_settings'].forEach(id=>{ const el=$(id); if(el) el.classList.remove('active');});
-    $('nav_'+name).classList.add('active');
-    if(name==='dashboard') renderDashboard();
-    if(name==='sales') renderSales();
-    if(name==='products') renderProducts();
-    if(name==='reports') renderReports();
-    if(name==='settings') renderSettings();
-  }
-  ['nav_dashboard','nav_sales','nav_products','nav_reports','nav_settings'].forEach(id=>{
-    $(id).addEventListener('click', ()=> showPage(id.replace('nav_','')));
-  });
-
-  // initial
-  showPage('dashboard');
-
-  /* ---------------- DASHBOARD ---------------- */
-  const chartSalesCtx = document.getElementById('chartSales').getContext('2d');
-  let chartSales = null;
-
-  function aggregateDays(days=7){
-    const labels = [], inc = [];
-    for(let i=days-1;i>=0;i--){
-      const d = new Date(); d.setDate(d.getDate()-i); labels.push(d.toLocaleDateString()); inc.push(0);
+  // 1) Pastikan ada tombol Buka Kasir di topbar — buat kalau belum ada
+  if(!$('btnOpenPOSTop')){
+    const top = document.querySelector('.top-actions');
+    if(top){
+      const btn = document.createElement('button');
+      btn.id = 'btnOpenPOSTop';
+      btn.className = 'small';
+      btn.style.background = '#0f6b63';
+      btn.style.color = '#fff';
+      btn.textContent = 'Buka Kasir';
+      // insert as first child so terlihat
+      top.insertBefore(btn, top.firstChild);
     }
-    data.forEach(tx=>{
-      if(tx.type==='sale'){ const key = new Date(tx.t).toLocaleDateString(); const idx = labels.indexOf(key); if(idx>=0) inc[idx]+=Number(tx.total||0); }
-    });
-    return {labels, inc};
   }
 
-  function renderDashboard(){
-    // summary numbers
-    let income=0, expense=0;
-    data.forEach(tx=>{ if(tx.type==='sale') income+=Number(tx.total||0); if(tx.type==='expense') expense+=Number(tx.amount||0); });
-    $('summary_total').textContent = fmt(income);
-    $('summary_expense').textContent = fmt(expense);
-    $('summary_profit').textContent = fmt(income-expense);
-    const todayCount = data.filter(tx => { const d=new Date(tx.t); const t=new Date(); return d.getFullYear()==t.getFullYear() && d.getMonth()==t.getMonth() && d.getDate()==t.getDate(); }).length;
-    $('stat_count').textContent = todayCount + ' transaksi';
-
-    // top products
-    const agg = {};
-    data.forEach(tx=>{ if(tx.type==='sale'){ agg[tx.item] = (agg[tx.item]||0)+Number(tx.total||0); }});
-    const top = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    const topDiv = $('topProducts'); topDiv.innerHTML = '';
-    if(top.length===0) topDiv.innerHTML = '<div class="muted">Belum ada penjualan</div>';
-    top.forEach(([name,val])=>{
-      const el = document.createElement('div'); el.style.display='flex'; el.style.justifyContent='space-between'; el.style.padding='6px 0';
-      el.innerHTML = `<div>${name}</div><div style="font-weight:700">${fmt(val)}</div>`; topDiv.appendChild(el);
-    });
-
-    // mini products
-    const mini = $('miniProducts'); mini.innerHTML='';
-    products.forEach(p=>{ const r=document.createElement('div'); r.style.display='flex'; r.style.justifyContent='space-between'; r.style.padding='6px 0'; r.innerHTML = `<div>${p.name} <small class="muted">(${p.category})</small></div><div>${fmt(p.price)} • ${p.stock}</div>`; mini.appendChild(r); });
-
-    // chart
-    const aggDays = aggregateDays(7);
-    if(chartSales) chartSales.destroy();
-    chartSales = new Chart(chartSalesCtx, { type:'bar', data:{ labels:aggDays.labels, datasets:[{label:'Pemasukan',data:aggDays.inc,backgroundColor:'#16a34a'}]}, options:{responsive:true} });
-
-    renderTableSales();
-  }
-
-  function renderTableSales(){
-    const tbody = document.querySelector('#tableSales tbody'); tbody.innerHTML='';
-    data.slice().reverse().forEach((tx,i)=>{
-      const tr = document.createElement('tr');
-      const d = parseDate(tx.t);
-      const desc = tx.type==='sale' ? (tx.item + ' x' + (tx.qty||1)) : (tx.desc || 'Pengeluaran');
-      const debit = tx.type==='sale' ? fmt(tx.total) : '';
-      const credit = tx.type==='expense' ? fmt(tx.amount) : '';
-      const method = tx.method || (tx.type==='sale'?'Tunai':'-');
-      tr.innerHTML = `<td>${d.toLocaleString()}</td><td>${desc}</td><td>${method}</td><td>${debit}</td><td>${credit}</td><td><button data-i="${data.length-1-i}" class="small ghost">Hapus</button></td>`;
-      tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('button').forEach(b=> b.addEventListener('click', e=>{
-      const idx = Number(e.currentTarget.dataset.i);
-      if(confirm('Hapus transaksi?')){ data.splice(idx,1); saveAll(); renderDashboard(); renderSales(); }
-    }));
-  }
-
-  /* ---------------- SALES page ---------------- */
-  function renderSales(){
-    const tbody = document.querySelector('#tableAll tbody'); tbody.innerHTML='';
-    data.slice().reverse().forEach((tx,i)=>{
-      const d=parseDate(tx.t);
-      const desc = tx.type==='sale'? tx.item : tx.desc;
-      const cat = tx.category || tx.cat || '';
-      const qty = tx.qty || '';
-      const price = tx.price || '';
-      const total = tx.type==='sale'? fmt(tx.total) : (tx.type==='expense'? fmt(tx.amount):'');
-      const method = tx.method || '';
-      const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${d.toLocaleString()}</td><td>${desc}</td><td>${cat}</td><td>${qty}</td><td>${price?fmt(price):''}</td><td>${total}</td><td>${method}</td><td><button data-i="${data.length-1-i}" class="small ghost">Hapus</button></td>`;
-      tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('button').forEach(b=> b.addEventListener('click', e=>{
-      const idx = Number(e.currentTarget.dataset.i);
-      if(confirm('Hapus transaksi?')){ data.splice(idx,1); saveAll(); renderSales(); renderDashboard(); }
-    }));
-  }
-
-  /* ---------------- PRODUCTS page ---------------- */
-  function renderProducts(){
-    const tbody = document.querySelector('#tableProd tbody'); tbody.innerHTML='';
-    products.forEach((p,i)=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML = `<td>${p.name}</td><td>${p.category}</td><td>${fmt(p.price)}</td><td>${p.stock}</td><td>
-        <button data-i="${i}" class="small ghost">Tambah Stok</button>
-        <button data-i="${i}" class="small ghost">Edit</button>
-        <button data-i="${i}" class="small danger">Hapus</button>
-      </td>`;
-      tbody.appendChild(tr);
-    });
-    tbody.querySelectorAll('button').forEach(btn=>{
-      btn.addEventListener('click', e=>{
-        const i=Number(e.currentTarget.dataset.i);
-        const txt=e.currentTarget.textContent;
-        if(txt.includes('Tambah Stok')){
-          const q = Number(prompt('Jumlah stok masuk', '1'))||0; if(q>0){ products[i].stock = (products[i].stock||0)+q; saveAll(); renderProducts(); renderDashboard(); }
-        } else if(txt.includes('Edit')){
-          const name = prompt('Nama produk', products[i].name)||products[i].name;
-          const cat = prompt('Kategori', products[i].category)||products[i].category;
-          const price = Number(prompt('Harga', products[i].price))||products[i].price;
-          products[i].name=name; products[i].category=cat; products[i].price=price; saveAll(); renderProducts(); renderDashboard();
-        } else {
-          if(confirm('Hapus produk?')){ products.splice(i,1); saveAll(); renderProducts(); renderDashboard(); }
-        }
-      })
-    });
-  }
-
-  /* ---------------- Reports ---------------- */
-  function renderReports(){ /* nothing dynamic to render currently */ }
-
-  // Export CSV (transactions)
-  $('btnExportCsv').addEventListener('click', ()=>{
-    if(!data.length){ alert('Tidak ada data untuk diexport'); return; }
-    const rows=[['tanggal','tipe','keterangan','kategori','qty','harga','total','metode']];
-    data.forEach(tx=>{
-      const t = new Date(tx.t).toLocaleString();
-      if(tx.type==='sale') rows.push([t,'Penjualan',tx.item,tx.category||'',tx.qty||1,tx.price||'',tx.total,tx.method||'Tunai']);
-      else rows.push([t,'Pengeluaran',tx.desc,tx.cat||'', '', '',tx.amount,tx.method||'']);
-    });
-    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='copycenter_export_'+(new Date().toISOString().slice(0,10))+'.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
-
-  // Export stock
-  $('btnExportStock').addEventListener('click', ()=>{
-    const rows=[['produk','kategori','harga','stok']];
-    products.forEach(p=> rows.push([p.name,p.category,p.price,p.stock]));
-    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='copycenter_stock_'+(new Date().toISOString().slice(0,10))+'.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
-
-  // Backup JSON
-  function downloadBackup(){
-    const obj = {ts:new Date().toISOString(), data, products, pin: localStorage.getItem(K_PIN) || '1234'};
-    const blob = new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='copycenter_backup_'+(new Date().toISOString().slice(0,19)).replace(/[:T]/g,'_')+'.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-  $('btnDownloadBackup').addEventListener('click', downloadBackup);
-
-  // Import backup / CSV (basic)
-  $('btnImport').addEventListener('click', ()=> $('importBackupFile').click());
-  $('importBackupFile').addEventListener('change', async (e)=>{
-    const f = e.target.files[0]; if(!f) return;
-    const text = await f.text();
+  // 2) Jika nav Pengaturan tidak bereaksi, pastikan showPage terdaftar dan nav button clickable
+  function safeShowPage(name){
+    // fall back simple show/hide in case original function missing
     try{
-      if(f.name.endsWith('.json')){
-        const obj = JSON.parse(text);
-        if(obj.data && confirm('Restore dari file backup? (akan menimpa data saat ini)')){
-          data = obj.data || []; products = obj.products || products; saveAll(); renderDashboard(); renderProducts(); renderSales(); alert('Restore selesai.');
-        } else alert('File JSON tidak dikenali.');
-      } else {
-        // very simple CSV -> append sales (best effort)
-        const rows = parseCSV(text);
-        if(rows.length<2) return alert('CSV tidak valid');
-        for(let i=1;i<rows.length;i++){
-          const r = rows[i];
-          const t = r[0]||new Date().toISOString();
-          const tipe = (r[1]||'').toLowerCase();
-          if(tipe.includes('penjualan') || tipe.includes('sale')){
-            const item = r[2] || 'Penjualan';
-            const total = Number((r[6]||r[3]||'').replace(/[^0-9]/g,'')) || 0;
-            data.push({type:'sale', item, qty:1, price:total, total, category:r[3]||'', method:r[7]||'Tunai', t: new Date(t).toISOString()});
-          } else {
-            const desc = r[2]||'Pengeluaran'; const amount = Number((r[4]||r[5]||'').replace(/[^0-9]/g,'')) || 0;
-            data.push({type:'expense', desc, amount, cat:r[3]||'', method:r[7]||'', t:new Date(t).toISOString()});
-          }
+      // try call original showPage if exists
+      if(window.showPage) { window.showPage(name); return; }
+      // otherwise use existing page ids
+      const pages = ['page_dashboard','page_sales','page_products','page_reports','page_settings'];
+      pages.forEach(pid=>{ const el = document.getElementById(pid); if(el) el.style.display='none'; });
+      const map = {dashboard:'page_dashboard', sales:'page_sales', products:'page_products', reports:'page_reports', settings:'page_settings'};
+      const target = map[name];
+      if(target) document.getElementById(target).style.display='block';
+    }catch(err){
+      console.error('safeShowPage err', err);
+    }
+  }
+
+  // attach to topbar button
+  const topBtn = $('btnOpenPOSTop');
+  if(topBtn) topBtn.addEventListener('click', ()=>{ 
+    // if overlay available, use it
+    const ov = document.getElementById('overlay');
+    if(ov){ ov.style.display = 'flex'; return; }
+    alert('Kasir (POS) tidak tersedia — pastikan file POS ada (overlay id="overlay")');
+  });
+
+  // attach the sidebar Pengaturan nav (safe)
+  const navSettings = document.getElementById('nav_settings');
+  if(navSettings) navSettings.addEventListener('click', ()=> safeShowPage('settings'));
+
+  const navSales = document.getElementById('nav_sales');
+  if(navSales) navSales.addEventListener('click', ()=> safeShowPage('sales'));
+
+  // 3) Tambah filter singkat di buku kas: Harian / Mingguan (dom inject)
+  (function insertLedgerFilter(){
+    const ledgerCard = document.querySelector('.right-panel.card'); // where ledger usually is
+    if(!ledgerCard) return;
+    // avoid duplicate
+    if(document.getElementById('ledgerQuickFilter')) return;
+    const div = document.createElement('div');
+    div.id = 'ledgerQuickFilter';
+    div.style.margin = '8px 0';
+    div.innerHTML = `
+      <label style="display:block;margin-bottom:6px" class="muted">Tampilkan:</label>
+      <select id="ledgerRange" style="padding:6px;border-radius:8px;border:1px solid #e6e9ef">
+        <option value="daily">Harian</option>
+        <option value="weekly">Mingguan</option>
+        <option value="all">Semua</option>
+      </select>
+    `;
+    ledgerCard.insertBefore(div, ledgerCard.firstChild);
+
+    // function to filter table
+    function applyLedgerFilter(){
+      const mode = document.getElementById('ledgerRange').value;
+      // assume original renderTableSales() exists and uses global 'data'. If not, do custom
+      try{
+        if(typeof window.renderTableSales === 'function'){
+          // if original supports filter param, try calling with boolean (if implemented)
+          // otherwise we re-render table by ourselves
+          if(window.renderTableSales.length){ window.renderTableSales(mode); return; } // if expects a param
         }
-        saveAll(); renderDashboard(); renderSales(); alert('Import selesai (append).');
+      }catch(e){ console.warn(e) }
+
+      // fallback manual filter + render into #tableSales tbody
+      const tbody = document.querySelector('#tableSales tbody');
+      if(!tbody) return;
+      tbody.innerHTML = '';
+      const now = new Date();
+      const rows = data.slice().reverse().filter(tx=>{
+        if(mode==='all') return true;
+        const d = new Date(tx.t);
+        if(mode==='daily') return d.getFullYear()==now.getFullYear() && d.getMonth()==now.getMonth() && d.getDate()==now.getDate();
+        if(mode==='weekly'){
+          // week: last 7 days including today
+          const diff = (now - d) / (1000*60*60*24);
+          return diff <= 7;
+        }
+        return true;
+      });
+      rows.forEach((tx,i)=>{
+        const tr = document.createElement('tr');
+        const date = new Date(tx.t).toLocaleString();
+        const desc = tx.type=='sale' ? `${tx.item} (x${tx.qty||1})` : (tx.desc || 'Pengeluaran');
+        const debit = tx.type=='sale' ? (window.fmt? window.fmt(tx.total) : ('Rp '+(tx.total||0))) : '';
+        const credit = tx.type=='expense' ? (window.fmt? window.fmt(tx.amount) : ('Rp '+(tx.amount||0))) : '';
+        const method = tx.method || '';
+        tr.innerHTML = `<td>${date}</td><td>${desc}</td><td>${method}</td><td>${debit}</td><td>${credit}</td><td></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('ledgerRange').addEventListener('change', applyLedgerFilter);
+    // run once
+    applyLedgerFilter();
+  })();
+
+  // 4) Quick diagnostics: print console errors if pengaturan button present but page not visible
+  setTimeout(()=>{
+    try{
+      const s = document.getElementById('page_settings');
+      if(s && getComputedStyle(s).display === 'none'){
+        console.log('Pengaturan ada tapi tersembunyi — klik nav Pengaturan untuk membukanya.');
       }
-    }catch(err){ alert('Import gagal: '+err.message); }
-    e.target.value='';
-  });
+    }catch(e){}
+  },500);
 
-  // simple CSV parser (supports quoted fields)
-  function parseCSV(text){
-    const rows=[]; let cur=''; let row=[]; let inQuotes=false;
-    for(let i=0;i<text.length;i++){
-      const ch=text[i]; const nxt=text[i+1];
-      if(ch==='"'){ if(inQuotes && nxt==='"'){ cur+='"'; i++; continue } inQuotes=!inQuotes; continue; }
-      if(ch===',' && !inQuotes){ row.push(cur); cur=''; continue; }
-      if((ch==='\n' || ch==='\r') && !inQuotes){ if(cur!=='' || row.length>0){ row.push(cur); cur=''; rows.push(row); row=[] } continue; }
-      cur+=ch;
-    }
-    if(cur!=='' || row.length>0){ row.push(cur); rows.push(row); }
-    return rows.map(r=> r.map(c=> c.trim()));
-  }
-
-  /* ----------------- SETTINGS ----------------- */
-  function renderSettings(){
-    $('curPin').textContent = localStorage.getItem(K_PIN) || '1234';
-    $('autoBackupHours').value = localStorage.getItem('copycenter_auto_hours') || 6;
-  }
-
-  $('btnChangePin').addEventListener('click', ()=>{
-    const cur = localStorage.getItem(K_PIN) || '1234';
-    const np = prompt('Masukkan PIN baru (4 digit)', cur);
-    if(np && np.length>=4){ localStorage.setItem(K_PIN, np); alert('PIN disimpan'); renderSettings(); }
-  });
-
-  let autoBackupTimer = null;
-  $('btnSetBackup').addEventListener('click', ()=>{
-    const h = Number($('autoBackupHours').value)||0; if(h<=0){ alert('Masukkan jam > 0'); return; }
-    localStorage.setItem('copycenter_auto_hours', String(h));
-    if(autoBackupTimer) clearInterval(autoBackupTimer);
-    autoBackupTimer = setInterval(()=>{ downloadBackup(); console.log('Auto backup done'); }, h * 3600 * 1000);
-    alert('Auto-backup diset setiap '+h+' jam');
-  });
-  $('btnDisableBackup').addEventListener('click', ()=>{ if(autoBackupTimer) clearInterval(autoBackupTimer); autoBackupTimer=null; localStorage.removeItem('copycenter_auto_hours'); alert('Auto-backup dimatikan'); });
-
-  $('btnClearAll').addEventListener('click', ()=>{ if(confirm('Hapus semua data transaksi & produk?')){ data=[]; products=[]; saveAll(); renderDashboard(); renderProducts(); renderSales(); alert('Semua data dihapus'); } });
-
-  // restore auto-backup if set
-  (function initAuto(){ const h = Number(localStorage.getItem('copycenter_auto_hours')||0); if(h>0) autoBackupTimer = setInterval(()=>{ downloadBackup(); console.log('Auto backup'); }, h*3600*1000); })();
-
-  /* ----------------- ADD / UI HANDLERS ----------------- */
-  // sales manual add
-  $('btnAddSale').addEventListener('click', ()=>{
-    const type = $('salesType').value;
-    if(type==='sale'){
-      const item = ($('salesItem').value || '').trim() || 'Penjualan';
-      const qty = Number($('salesQty').value) || 1;
-      const price = Number($('salesPrice').value) || 0;
-      const total = qty * price;
-      // reduce stock if matched product name
-      const prod = products.find(p=>p.name.toLowerCase()===item.toLowerCase());
-      if(prod){ prod.stock = (prod.stock||0) - qty; if(prod.stock < 0) prod.stock = 0; }
-      data.push({type:'sale', item, qty, price, total, category: prod?prod.category:'Produk', method: $('salesPayment').value || 'Tunai', t: now()});
-    } else {
-      const desc = ($('salesItem').value || '').trim() || 'Pengeluaran';
-      const amount = Number(prompt('Jumlah pengeluaran (Rp)', '50000')) || 0;
-      const cat = prompt('Kategori pengeluaran', 'Operasional') || 'Lainnya';
-      data.push({type:'expense', desc, amount, cat, method: $('salesPayment').value || '', t: now()});
-    }
-    saveAll(); $('salesItem').value=''; renderSales(); renderDashboard(); renderProducts();
-  });
-
-  // quick add fotokopi
-  $('btnQuick').addEventListener('click', ()=>{
-    $('salesType').value='sale';
-    $('salesItem').value='Fotokopi (1 lembar)'; $('salesQty').value=1; $('salesPrice').value=1500;
-    $('btnAddSale').click();
-  });
-
-  // add product
-  $('btnAddProd').addEventListener('click', ()=>{
-    const name = ($('prodName').value || '').trim(); if(!name) return alert('Nama produk kosong');
-    const cat = ($('prodCat').value||'').trim() || 'Umum';
-    const price = Number($('prodPrice').value) || 0;
-    const stock = Number($('prodStock').value) || 0;
-    products.push({id:'p'+Date.now(), name, category:cat, price, stock});
-    saveAll(); $('prodName').value=''; $('prodCat').value=''; $('prodPrice').value=''; $('prodStock').value='0';
-    renderProducts(); renderDashboard();
-  });
-
-  // new tx button goes to sales
-  $('btnNewTx').addEventListener('click', ()=> showPage('sales'));
-
-  // global search
-  $('searchGlobal').addEventListener('input', ()=> {
-    const q = ($('searchGlobal').value||'').toLowerCase();
-    $('filterTextDash').value = q;
-    renderTableSales();
-  });
-
-  // Reports: daily report download
-  $('btnDownloadReport').addEventListener('click', ()=>{
-    // generate simple daily summary csv
-    const nowDate = new Date().toLocaleDateString();
-    const rows=[['tanggal','total_pemasukan','total_pengeluaran','laba']];
-    let inc=0, exp=0;
-    data.forEach(tx=>{ const d=new Date(tx.t); if(d.toLocaleDateString() === nowDate){ if(tx.type==='sale') inc+=Number(tx.total||0); if(tx.type==='expense') exp+=Number(tx.amount||0); }});
-    rows.push([nowDate, inc, exp, inc-exp]);
-    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download='report_daily_'+(new Date().toISOString().slice(0,10))+'.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
-
-  /* -------------- POS (Kasir) -------------- */
-  const overlay = $('overlay');
-  const posCart = [];
-  function openPOS(){ overlay.style.display='flex'; renderPOS(); }
-  function closePOS(){ overlay.style.display='none'; posCart.length=0; renderPOS(); }
-
-  $('btnOpenPOS').addEventListener('click', openPOS);
-  $('posCancel').addEventListener('click', closePOS);
-  $('posClearCart').addEventListener('click', ()=>{ if(confirm('Kosongkan keranjang?')){ posCart.length=0; renderPOS(); }});
-
-  // quick price buttons
-  document.querySelectorAll('.quick-btn').forEach(b=>{
-    b.addEventListener('click', ()=> {
-      const price = Number(b.dataset.price)||0; $('posPrice').value = price; $('posItem').value = 'Fotokopi (1 lembar)'; $('posQty').value = 1;
-    });
-  });
-
-  function renderPOS(){
-    // cart
-    const cartDiv = $('posCart'); cartDiv.innerHTML='';
-    posCart.forEach((it, idx)=>{
-      const r=document.createElement('div'); r.style.display='flex'; r.style.justifyContent='space-between'; r.style.padding='6px 0';
-      r.innerHTML = `<div>${it.item} x${it.qty} @ ${fmt(it.price)}</div><div><button class="small ghost" data-i="${idx}">Hapus</button></div>`;
-      cartDiv.appendChild(r);
-    });
-    cartDiv.querySelectorAll('button').forEach(b=> b.addEventListener('click', e=>{ posCart.splice(Number(e.currentTarget.dataset.i),1); renderPOS(); }));
-
-    // receipt preview
-    const rec = $('posReceipt'); let total=0;
-    let text = '=== COPYCENTER ANTAR KITA ===\n';
-    text += 'Tanggal: ' + new Date().toLocaleString() + '\n\n';
-    posCart.forEach(it=>{ text += `${it.item} x${it.qty} @ ${fmt(it.price)} = ${fmt(it.qty*it.price)}\n`; total += it.qty*it.price; });
-    text += '\nTOTAL: ' + fmt(total) + '\n';
-    rec.textContent = text;
-  }
-
-  $('posAdd').addEventListener('click', ()=>{
-    const item = ($('posItem').value || '').trim() || 'Penjualan';
-    const qty = Number($('posQty').value) || 1;
-    const price = Number($('posPrice').value) || 0;
-    posCart.push({item, qty, price, method: $('posPayment').value || 'Tunai'});
-    renderPOS();
-    // if auto checkout (immediate) - here just leave in cart for print or press checkout
-  });
-
-  // print & checkout: when printing, push cart items to main data and clear cart
-  $('posPrint').addEventListener('click', ()=>{
-    if(posCart.length===0) return alert('Keranjang kosong');
-    // build aggregated totals
-    const receiptLines = [];
-    let total = 0;
-    posCart.forEach(it=>{
-      const subtotal = it.qty * it.price;
-      total += subtotal;
-      receiptLines.push(it);
-      // reduce stock if matching product
-      const p = products.find(pp=>pp.name.toLowerCase()===it.item.toLowerCase());
-      if(p){ p.stock = (p.stock||0) - it.qty; if(p.stock < 0) p.stock = 0; }
-      data.push({type:'sale', item:it.item, qty:it.qty, price:it.price, total: subtotal, category: p? p.category : 'Produk', method: it.method || 'Tunai', t: now()});
-    });
-    saveAll();
-    // build printable HTML and open
-    const html = buildReceiptHTML(receiptLines, total);
-    const w = window.open('', '_blank', 'width=400,height=600');
-    w.document.write(html);
-    w.document.close();
-    // auto print
-    w.focus();
-    setTimeout(()=>{ w.print(); }, 300);
-    // clear cart & refresh
-    posCart.length=0; renderPOS(); renderDashboard(); renderSales(); renderProducts();
-  });
-
-  function buildReceiptHTML(lines, total){
-    let html = '<!doctype html><html><head><meta charset="utf-8"><title>Struk</title><style>body{font-family:monospace;padding:8px} h2{text-align:center} .line{display:flex;justify-content:space-between}</style></head><body>';
-    html += '<h2>COPYCENTER ANTAR KITA</h2>';
-    html += '<div>Tgl: '+ new Date().toLocaleString() +'</div><hr>';
-    lines.forEach(it=> html += `<div class="line"><div>${it.item} x${it.qty}</div><div>${fmt(it.qty*it.price)}</div></div>`);
-    html += '<hr><div class="line"><strong>Total</strong><strong>'+fmt(total)+'</strong></div>';
-    html += '<p style="text-align:center">Terima kasih!</p>';
-    html += '</body></html>';
-    return html;
-  }
-
-  /* -------------- UI helpers & init -------------- */
-  // open POS via button also
-  $('btnOpenPOS').addEventListener('click', openPOS);
-
-  // when overlay clicked outside modal close
-  overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closePOS(); });
-
-  // add keyboard support: Enter to add, Esc to close POS
-  document.addEventListener('keydown', e=>{
-    if(e.key === 'Escape'){ if(overlay.style.display==='flex') closePOS(); }
-  });
-
-  // buttons: open pages
-  $('btnNewTx').addEventListener('click', ()=> showPage('sales'));
-
-  // initial render
-  renderProducts();
-  renderSales();
-  renderDashboard();
-  renderSettings();
-
-  // expose for console debugging
-  window.cc = { data, products, saveAll, fmt };
+  console.log('Patch UI helper injected — POS top button + ledger quick filter ready.');
 })();
 </script>
-</body>
-</html>
