@@ -1,135 +1,424 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Copycenter Antar Kita — Login Fix</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Copycenter Antar Kita — Pencatatan Lengkap</title>
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: linear-gradient(160deg, #e3f2f1, #f4f8f8);
-      margin: 0;
-    }
-    .login-box {
-      background: white;
-      padding: 2rem 3rem;
-      border-radius: 15px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-      text-align: center;
-      max-width: 350px;
-      width: 100%;
-    }
-    .logo {
-      font-size: 3rem;
-      background-color: #004d47;
-      color: white;
-      width: 70px;
-      height: 70px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 20%;
-      margin: 0 auto 20px auto;
-      font-weight: bold;
-    }
-    h2 {
-      margin: 10px 0;
-      color: #003d38;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      margin-top: 15px;
-      font-size: 1rem;
-      text-align: center;
-    }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: #015e55;
-      color: white;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #014840;
-    }
-    .error {
-      color: red;
-      margin-top: 10px;
-      display: none;
-    }
+    :root{--bg:#f7f8fb;--card:#fff;--accent:#164e63;--muted:#6b7280}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{margin:0;padding:18px;background:linear-gradient(180deg,#f3f4f6,#ffffff);color:#0f172a}
+    .wrap{max-width:980px;margin:0 auto}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:4px 0 18px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    @media(max-width:880px){.grid{grid-template-columns:1fr} .actions-row{flex-wrap:wrap}}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(12,15,30,0.06)}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef;font-size:14px}
+    .row{display:flex;gap:8px}
+    .row .col{flex:1}
+    button{background:var(--accent);color:#fff;border:0;padding:10px 12px;border-radius:10px;font-weight:600;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid #e6e9ef;color:var(--accent)}
+    .totals{display:flex;gap:8px;flex-wrap:wrap}
+    .stat{flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,#fff,#fbfdff);text-align:center}
+    .stat h3{margin:0;font-size:16px}
+    .stat p{margin:6px 0 0;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border-bottom:1px solid #eef2f7;font-size:13px;text-align:left}
+    .muted{color:var(--muted);font-size:13px}
+    .actions-row{display:flex;gap:8px;align-items:center}
+    .small{font-size:13px;padding:6px 8px;border-radius:8px}
+    .danger{background:#ef4444}
+    .success{background:#16a34a}
+    .login-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.12)}
+    .login-card{background:var(--card);padding:24px;border-radius:12px;box-shadow:0 10px 30px rgba(12,15,30,0.12);width:420px;max-width:92%}
+    .login-card h2{margin:0 0 8px}
+    .login-note{color:var(--muted);font-size:13px;margin-top:8px}
+    .product-list{margin-top:12px;border-radius:8px;padding:8px;border:1px dashed #eaeef2}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    .right-actions{display:flex;gap:8px;align-items:center}
   </style>
 </head>
-
 <body>
-  <div class="login-box" id="loginRoot">
-    <div class="logo">CC</div>
-    <h2>Copycenter Antar Kita</h2>
-    <p>Masukkan PIN untuk mengakses dashboard</p>
-    <input type="password" id="loginPin" placeholder="PIN 4 digit" maxlength="4" />
-    <button id="loginBtn">Masuk</button>
-    <div class="error" id="loginErr"></div>
-    <p style="font-size: 0.9rem; margin-top: 15px; color: gray;">
-      PIN default <b>1234</b>. Ubah nanti di pengaturan.
-    </p>
+  <!-- LOGIN OVERLAY -->
+  <div id="loginRoot" class="login-overlay" style="display:none">
+    <div class="login-card">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="display:inline-block;background:#0f766e;color:#fff;padding:12px;border-radius:12px;font-weight:700">CC</div>
+      </div>
+      <h2>Copycenter Antar Kita</h2>
+      <p>Masukkan PIN untuk mengakses dashboard pencatatan</p>
+      <input id="loginPin" placeholder="PIN 4 digit" type="password" maxlength="8" style="margin-top:8px" />
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="loginBtn">Masuk</button>
+        <button id="visitBtn" class="ghost">Batal</button>
+      </div>
+      <div id="loginErr" class="login-note" style="display:none;color:#b91c1c"></div>
+      <div class="login-note">PIN default <strong>1234</strong>. Ubah di Pengaturan.</div>
+    </div>
   </div>
 
-  <div id="appRoot" style="display: none; text-align: center;">
-    <h2>Selamat datang di dashboard!</h2>
-    <p>Login berhasil ✅</p>
+  <!-- APP -->
+  <div id="appRoot" class="wrap" style="display:none">
+    <header>
+      <div>
+        <h1>Copycenter Antar Kita — Pencatatan Lengkap</h1>
+        <p class="lead">Catat penjualan (fotokopi/print/pas foto/atk/rokok/minuman), pengeluaran, stok, laporan, dan backup.</p>
+      </div>
+      <div class="right-actions">
+        <div class="actions-row">
+          <button id="btnExport" class="small">Export CSV</button>
+          <button id="btnExportStock" class="small ghost">Export Stok</button>
+          <button id="btnImport" class="small ghost">Import CSV</button>
+          <button id="btnSettings" class="small ghost">Pengaturan</button>
+          <button id="btnClear" class="small ghost">Hapus Semua</button>
+        </div>
+        <button id="btnLogout" class="small ghost" style="margin-left:8px">Logout</button>
+      </div>
+    </header>
+
+    <main class="grid" style="margin-top:14px">
+      <section class="card">
+        <h2 style="font-size:16px;margin:0 0 12px">Tambah Transaksi</h2>
+
+        <div style="margin-bottom:12px">
+          <label>Jenis</label>
+          <select id="type">
+            <option value="sale">Penjualan (fotokopi / print / produk)</option>
+            <option value="expense">Pengeluaran</option>
+          </select>
+        </div>
+
+        <div id="saleForm">
+          <label>Nama Item / Layanan</label>
+          <input id="item" placeholder="Contoh: Fotokopi A4 (1 lembar)" />
+          <div class="row" style="margin-top:8px">
+            <div class="col">
+              <label>Jumlah</label>
+              <input id="qty" type="number" min="1" value="1" />
+            </div>
+            <div class="col">
+              <label>Harga per Unit (Rp)</label>
+              <input id="price" type="number" min="0" value="1500" />
+            </div>
+          </div>
+        </div>
+
+        <div id="expenseForm" style="display:none">
+          <label>Deskripsi Pengeluaran</label>
+          <input id="expDesc" placeholder="Contoh: Kertas A4, Tinta" />
+          <label style="margin-top:8px">Kategori</label>
+          <select id="expCat">
+            <option>Operasional</option>
+            <option>Perlengkapan</option>
+            <option>Gaji</option>
+            <option>Lainnya</option>
+          </select>
+          <label style="margin-top:8px">Jumlah (Rp)</label>
+          <input id="expAmount" type="number" min="0" value="50000" />
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="btnAdd">Tambah</button>
+          <button id="btnAddQuick" class="ghost">Tambah Cepat (Rp 1.500 x 1)</button>
+          <button id="btnStockIn" class="ghost">Stok Masuk</button>
+        </div>
+
+        <div style="margin-top:18px">
+          <h3 style="margin:0 0 8px">Ringkasan</h3>
+          <div class="totals">
+            <div class="stat"><h3>Pemasukan</h3><p id="totalIncome">Rp 0</p></div>
+            <div class="stat"><h3>Pengeluaran</h3><p id="totalExpense">Rp 0</p></div>
+            <div class="stat"><h3>Keuntungan</h3><p id="totalProfit">Rp 0</p></div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px">
+          <h4>Daftar Produk (contoh)</h4>
+          <div id="productList" class="product-list"></div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3 style="margin:0 0 10px">Buku Kas / Ledger</h3>
+        <div style="max-height:520px;overflow:auto">
+          <table id="ledger">
+            <thead><tr><th>Tgl</th><th>Keterangan</th><th>Debit</th><th>Kredit</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="btnToday" class="small">Filter Hari Ini</button>
+          <button id="btnAll" class="small ghost">Tampilkan Semua</button>
+        </div>
+        <footer>
+          <div class="muted" style="margin-top:8px">Data transaksi & stok tersimpan di browser (localStorage). Backup pakai Export CSV.</div>
+        </footer>
+      </aside>
+    </main>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const loginRoot = document.getElementById("loginRoot");
-      const appRoot = document.getElementById("appRoot");
-      const loginBtn = document.getElementById("loginBtn");
-      const loginPin = document.getElementById("loginPin");
-      const loginErr = document.getElementById("loginErr");
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // helper $
+  const $ = id => document.getElementById(id);
 
-      function getPin() {
-        return localStorage.getItem("copycenter_pin") || "1234";
-      }
+  // elements
+  const loginRoot = $('loginRoot');
+  const appRoot = $('appRoot');
+  const loginBtn = $('loginBtn');
+  const visitBtn = $('visitBtn');
+  const loginPin = $('loginPin');
+  const loginErr = $('loginErr');
+  const btnLogout = $('btnLogout');
 
-      function showApp() {
-       window.location.href = './index.html';
-      }
+  // app elements
+  const ledgerTbody = document.querySelector('#ledger tbody');
+  let data = JSON.parse(localStorage.getItem('copycenter_data')||'[]');
 
-      // tombol login
-      loginBtn.addEventListener("click", function () {
-        const pin = (loginPin.value || "").trim();
-        if (!pin) {
-          loginErr.textContent = "PIN belum diisi.";
-          loginErr.style.display = "block";
-          return;
-        }
+  function formatIDR(n){ if(!n && n!==0) return 'Rp 0'; return 'Rp ' + Number(n).toLocaleString('id-ID') }
 
-        if (pin === getPin()) {
-          localStorage.setItem("copycenter_authenticated", "true");
-          loginErr.style.display = "none";
-          showApp();
-        } else {
-          loginErr.textContent = "PIN salah, coba lagi!";
-          loginErr.style.display = "block";
-        }
-      });
+  // ---------- product sample (init once) ----------
+  const defaultProducts = [
+    {id: 'p1', name: 'Fotokopi B/W', category: 'Fotokopi', price: 1500, stock: 0},
+    {id: 'p2', name: 'Fotokopi Warna', category: 'Fotokopi', price: 4000, stock: 0},
+    {id: 'p3', name: 'Print Pas Foto', category: 'Fotokopi', price: 20000, stock: 0},
+    {id: 'p4', name: 'Pulpen', category: 'ATK', price: 3000, stock: 0},
+    {id: 'p5', name: 'Buku Tulis', category: 'ATK', price: 6000, stock: 0},
+    {id: 'p6', name: 'Aqua 600ml', category: 'Minuman', price: 5000, stock: 0},
+    {id: 'p7', name: 'Rokok Surya Besar', category: 'Rokok', price: 36000, stock: 3},
+    {id: 'p8', name: 'Rokok Surya Kecil', category: 'Rokok', price: 27000, stock: 0},
+  ];
 
-      // tekan enter
-      loginPin.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") loginBtn.click();
+  function initProducts(){
+    const key='copycenter_products';
+    try{
+      const p = JSON.parse(localStorage.getItem(key)||'null');
+      if(!p){ localStorage.setItem(key, JSON.stringify(defaultProducts)); return defaultProducts; }
+      return p;
+    }catch(e){ localStorage.setItem(key, JSON.stringify(defaultProducts)); return defaultProducts; }
+  }
+
+  let products = initProducts();
+
+  function renderProductList(){
+    const el = $('productList');
+    el.innerHTML = '';
+    products.forEach(p=>{
+      const d = document.createElement('div');
+      d.style.display='flex'; d.style.justifyContent='space-between'; d.style.padding='6px 0';
+      d.innerHTML = `<div>${p.name} <small style="color:var(--muted)">(${p.category})</small></div><div>${formatIDR(p.price)} <button data-id="${p.id}" class="small ghost" style="margin-left:8px">Tambah Stok</button></div>`;
+      el.appendChild(d);
+    });
+    // attach stok handler
+    el.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const id = b.dataset.id;
+        const qty = prompt('Masukkan jumlah stok masuk (angka)', '1');
+        if(!qty) return;
+        const qn = Number(qty)||0;
+        products = products.map(pp => pp.id===id ? {...pp, stock: (pp.stock||0)+qn} : pp);
+        localStorage.setItem('copycenter_products', JSON.stringify(products));
+        renderProductList();
       });
     });
-  </script>
+  }
+
+  // ---------- auth / login ----------
+  function getPin(){ return localStorage.getItem('copycenter_pin') || '1234' }
+  function pinEnabled(){ return JSON.parse(localStorage.getItem('copycenter_pin_enabled'))!==false } // default true
+  function isAuthenticated(){ return localStorage.getItem('copycenter_authenticated') === 'true' }
+
+  function showApp(){ 
+    if(loginRoot) loginRoot.style.display='none';
+    if(appRoot) appRoot.style.display='block';
+    render(false);
+    renderProductList();
+  }
+  function showLogin(){
+    if(loginRoot) loginRoot.style.display='flex';
+    if(appRoot) appRoot.style.display='none';
+  }
+
+  // init decide
+  if(!pinEnabled() || isAuthenticated()){
+    showApp();
+  } else {
+    showLogin();
+  }
+
+  // login handlers
+  if(loginBtn){
+    loginBtn.addEventListener('click', ()=>{
+      const v = (loginPin.value||'').trim();
+      if(!v){ loginErr.style.display='block'; loginErr.textContent='PIN belum diisi.'; return; }
+      if(v === getPin()){ localStorage.setItem('copycenter_authenticated','true'); loginErr.style.display='none'; showApp(); }
+      else { loginErr.style.display='block'; loginErr.textContent='PIN salah, coba lagi!'; }
+    });
+  }
+  if(loginPin) loginPin.addEventListener('keydown', e=>{ if(e.key==='Enter' && loginBtn) loginBtn.click() })
+  if(visitBtn) visitBtn.addEventListener('click', ()=>{ window.location.href='https://github.com/rizkirokania2025' })
+
+  // logout
+  if(btnLogout){
+    btnLogout.addEventListener('click', ()=>{
+      localStorage.removeItem('copycenter_authenticated');
+      showLogin();
+      // clear input
+      if(loginPin) loginPin.value='';
+    });
+  }
+
+  // ---------- main app logic ----------
+  function nowIso(){return new Date().toISOString()}
+  function save(){ localStorage.setItem('copycenter_data', JSON.stringify(data)); render() }
+
+  function render(filterToday=false){
+    ledgerTbody.innerHTML='';
+    let income=0, expense=0;
+    const rows = data.filter(tx=>{
+      if(!filterToday) return true;
+      const d = new Date(tx.t); const today=new Date();
+      return d.getFullYear()==today.getFullYear() && d.getMonth()==today.getMonth() && d.getDate()==today.getDate();
+    });
+    rows.slice().reverse().forEach((tx,i)=>{
+      const tr=document.createElement('tr');
+      const date=new Date(tx.t);
+      const desc= tx.type=='sale' ? `${tx.item} (x${tx.qty})` : `${tx.desc} — ${tx.cat||''}`;
+      const debit = tx.type=='sale' ? formatIDR(tx.total) : '';
+      const credit = tx.type=='expense' ? formatIDR(tx.amount) : '';
+      if(tx.type=='sale') income += Number(tx.total);
+      if(tx.type=='expense') expense += Number(tx.amount);
+      tr.innerHTML = `<td>${date.toLocaleString()}</td><td>${desc}</td><td>${debit}</td><td>${credit}</td><td><button data-i='${data.length-1-i}' class='small ghost'>Hapus</button></td>`;
+      ledgerTbody.appendChild(tr);
+    });
+    $('totalIncome').textContent = formatIDR(income);
+    $('totalExpense').textContent = formatIDR(expense);
+    $('totalProfit').textContent = formatIDR(income - expense);
+
+    // attach delete handlers
+    ledgerTbody.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', e=>{
+        const idx = Number(e.currentTarget.dataset.i);
+        if(confirm('Hapus transaksi?')){ data.splice(idx,1); save(); }
+      })
+    })
+  }
+
+  // initial render if app visible
+  if(appRoot && appRoot.style.display!=='none'){ render(false); renderProductList(); }
+
+  // toggle forms
+  $('type').addEventListener('change', e=>{
+    if(e.target.value=='sale'){ $('saleForm').style.display='block'; $('expenseForm').style.display='none' }
+    else { $('saleForm').style.display='none'; $('expenseForm').style.display='block' }
+  })
+
+  // add transactions
+  function addTx(){
+    const type = $('type').value;
+    if(type=='sale'){
+      const item = $('item').value.trim() || 'Penjualan';
+      const qty = Number($('qty').value) || 1;
+      const price = Number($('price').value) || 0;
+      const total = qty * price;
+      data.push({type:'sale', item, qty, price, total, t:nowIso()})
+    } else {
+      const desc = $('expDesc').value.trim() || 'Pengeluaran';
+      const cat = $('expCat').value;
+      const amount = Number($('expAmount').value) || 0;
+      data.push({type:'expense', desc, cat, amount, t:nowIso()})
+    }
+    save();
+    $('item').value=''; $('qty').value=1; $('price').value=1500; $('expDesc').value=''; $('expAmount').value=50000;
+  }
+  $('btnAdd').addEventListener('click', addTx)
+  $('btnAddQuick').addEventListener('click', ()=>{
+    $('type').value='sale'; $('type').dispatchEvent(new Event('change'));
+    $('item').value='Fotokopi (1 lembar)'; $('qty').value=1; $('price').value=1500; addTx();
+  })
+
+  // stock in button: simple prompt
+  $('btnStockIn').addEventListener('click', ()=>{
+    const name = prompt('Nama produk (contoh: Fotokopi B/W)');
+    if(!name) return;
+    const q = Number(prompt('Jumlah stok masuk', '1'))||0;
+    if(q<=0) return alert('Jumlah harus > 0');
+    // update products if exists
+    const idx = products.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+    if(idx>=0){ products[idx].stock = (products[idx].stock||0)+q; localStorage.setItem('copycenter_products', JSON.stringify(products)); renderProductList(); alert('Stok ditambahkan'); }
+    else {
+      const price = Number(prompt('Harga per unit (Rp)', '1500'))||0;
+      const cat = prompt('Kategori produk', 'Produk') || 'Produk';
+      const id = 'p'+(Date.now());
+      products.push({id, name, category:cat, price, stock:q});
+      localStorage.setItem('copycenter_products', JSON.stringify(products)); renderProductList(); alert('Produk baru & stok ditambahkan');
+    }
+  });
+
+  // export CSV
+  $('btnExport').addEventListener('click', ()=>{
+    if(!data.length){ alert('Tidak ada data untuk diexport.'); return }
+    const rows=[['tanggal','tipe','keterangan','debit','kredit']];
+    data.forEach(tx=>{
+      const t=new Date(tx.t).toLocaleString();
+      if(tx.type=='sale') rows.push([t,'Penjualan',tx.item + ' x'+tx.qty,tx.total,'']);
+      else rows.push([t,'Pengeluaran',tx.desc + ' ('+ (tx.cat||'') +')','',''+tx.amount]);
+    });
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`copycenter_data_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  // export stock
+  $('btnExportStock').addEventListener('click', ()=>{
+    const key='copycenter_products';
+    const p = JSON.parse(localStorage.getItem(key)||'[]');
+    if(!p.length) return alert('Tidak ada data stok.');
+    const rows=[['produk','kategori','harga','stok']];
+    p.forEach(x=> rows.push([x.name||'', x.category||'', x.price||0, x.stock||0]));
+    const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`copycenter_stock_${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  // import CSV (simple)
+  $('btnImport').addEventListener('click', ()=>{ 
+    const fileInput = document.createElement('input'); fileInput.type='file'; fileInput.accept='.csv';
+    fileInput.onchange = async (e)=> {
+      const f = e.target.files[0]; if(!f) return; const text = await f.text();
+      // simple parser
+      const rows = text.split(/\r?\n/).map(r=>r.split(',').map(c=>c.replace(/^"|"$/g,'').trim()));
+      if(rows.length<2){ alert('File CSV kosong atau format tidak dikenali.'); return }
+      const imported=[];
+      for(let i=1;i<rows.length;i++){
+        const r = rows[i]; if(!r || r.length<4) continue;
+        const tipe = (r[1]||'').toLowerCase();
+        const desc = r[2]||'';
+        const debit = Number((r[3]||'').replace(/[^0-9\-\.]/g,'')) || 0;
+        const credit = Number((r[4]||'').replace(/[^0-9\-\.]/g,'')) || 0;
+        if(debit>0 || tipe.includes('penjualan')){ imported.push({type:'sale', item: desc.replace(/ x\d+$/i,''), qty:1, price:debit, total:debit, t:nowIso()}) }
+        else if(credit>0 || tipe.includes('pengeluaran')){ imported.push({type:'expense', desc:desc, cat:'Lainnya', amount: credit, t:nowIso()}) }
+      }
+      if(!imported.length){ alert('Tidak ada transaksi valid terdeteksi'); return }
+      data = data.concat(imported); save(); alert('Import berhasil: '+imported.length+' transaksi.');
+    };
+    fileInput.click();
+  });
+
+  // clear
+  $('btnClear').addEventListener('click', ()=>{ if(confirm('Yakin hapus semua data?')){ data=[]; save(); } });
+
+  // filters
+  $('btnToday').addEventListener('click', ()=>render(true));
+  $('btnAll').addEventListener('click', ()=>render(false));
+
+  // keep rendering if storage changed elsewhere
+  window.addEventListener('storage', ()=>{ data = JSON.parse(localStorage.getItem('copycenter_data')||'[]'); render(); renderProductList(); });
+
+}); // end DOMContentLoaded
+</script>
 </body>
 </html>
