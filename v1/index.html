@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kasir Antar Kita</title>
+</head>
+<body>
+  <body>
+  <h1>Kasir Antar Kita</h1>
+
+  <h2>Tambah Transaksi</h2>
+
+  <label for="layanan">Nama layanan</label><br>
+  <input type="text" id="layanan" placeholder="Contoh: Fotokopi A4"><br><br>
+
+  <label for="jumlah">Jumlah</label><br>
+  <input type="number" id="jumlah" value="1"><br><br>
+
+  <label for="harga">Harga per unit (Rp)</label><br>
+  <input type="number" id="harga" value="500"><br><br>
+
+  <button id="tombol-tambah">Tambah</button>
+
+    <p id="hasil"></p>
+
+  <script>
+    const tombol = document.getElementById("tombol-tambah");
+
+    tombol.addEventListener("click", function () {
+      const jumlah = Number(document.getElementById("jumlah").value);
+      const harga = Number(document.getElementById("harga").value);
+      const total = jumlah * harga;
+
+      document.getElementById("hasil").textContent = "Total: Rp " + total;
+    });
+  </script>
+</body>
+</body>
+</html>
