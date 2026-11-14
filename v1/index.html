@@ -22,6 +22,8 @@
 
   <h2>Daftar Transaksi</h2>
   <ul id="daftar"></ul>
+    <h2>Rekap Hari Ini</h2>
+  <p id="rekap"></p>
 
   <script>
     const daftarTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
@@ -34,6 +36,18 @@
         const li = document.createElement("li");
         li.textContent = t.layanan + " - " + t.jumlah + " x Rp " + t.harga + " = Rp " + t.total;
         ul.appendChild(li);
+            function tampilkanRekap() {
+      const hariIni = new Date().toLocaleDateString("sv-SE");
+      let omzet = 0;
+
+      for (const t of daftarTransaksi) {
+        if (t.tanggal === hariIni) {
+          omzet = omzet + t.total;
+        }
+      }
+
+      document.getElementById("rekap").textContent = "Omzet hari ini: Rp " + omzet;
+    }
       }
     }
 
@@ -43,12 +57,14 @@
       const harga = Number(document.getElementById("harga").value);
       const total = jumlah * harga;
 
-      daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total });
+      daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total,tanggal: new Date().toLocaleDateString("sv-SE") });
       localStorage.setItem("transaksi", JSON.stringify(daftarTransaksi));
       tampilkanDaftar();
     });
 
     tampilkanDaftar();
+    tampilkanRekap();
+    
   </script>
 </body>
 </html>
