@@ -5,7 +5,6 @@
   <title>Kasir Antar Kita</title>
 </head>
 <body>
-  <body>
   <h1>Kasir Antar Kita</h1>
 
   <h2>Tambah Transaksi</h2>
@@ -21,9 +20,11 @@
 
   <button id="tombol-tambah">Tambah</button>
 
-   <ul id="daftar"></ul>
+  <h2>Daftar Transaksi</h2>
+  <ul id="daftar"></ul>
+
   <script>
-    const daftarTransaksi = [];
+    const daftarTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
 
     function tampilkanDaftar() {
       const ul = document.getElementById("daftar");
@@ -43,9 +44,11 @@
       const total = jumlah * harga;
 
       daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total });
+      localStorage.setItem("transaksi", JSON.stringify(daftarTransaksi));
       tampilkanDaftar();
     });
+
+    tampilkanDaftar();
   </script>
-</body>
 </body>
 </html>
