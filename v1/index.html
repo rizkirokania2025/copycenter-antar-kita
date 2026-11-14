@@ -1,70 +1,75 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Kasir Antar Kita</title>
+    <meta charset="UTF-8">
+    <title>Kasir Antar Kita</title>
 </head>
+
 <body>
-  <h1>Kasir Antar Kita</h1>
+    <h1>Kasir Antar Kita</h1>
 
-  <h2>Tambah Transaksi</h2>
+    <h2>Tambah Transaksi</h2>
 
-  <label for="layanan">Nama layanan</label><br>
-  <input type="text" id="layanan" placeholder="Contoh: Fotokopi A4"><br><br>
+    <label for="layanan">Nama layanan</label><br>
+    <input type="text" id="layanan" placeholder="Contoh: Fotokopi A4"><br><br>
 
-  <label for="jumlah">Jumlah</label><br>
-  <input type="number" id="jumlah" value="1"><br><br>
+    <label for="jumlah">Jumlah</label><br>
+    <input type="number" id="jumlah" value="1"><br><br>
 
-  <label for="harga">Harga per unit (Rp)</label><br>
-  <input type="number" id="harga" value="500"><br><br>
+    <label for="harga">Harga per unit (Rp)</label><br>
+    <input type="number" id="harga" value="500"><br><br>
 
-  <button id="tombol-tambah">Tambah</button>
+    <button id="tombol-tambah">Tambah</button>
 
-  <h2>Daftar Transaksi</h2>
-  <ul id="daftar"></ul>
+    <h2>Daftar Transaksi</h2>
+    <ul id="daftar"></ul>
+
     <h2>Rekap Hari Ini</h2>
-  <p id="rekap"></p>
+    <p id="rekap"></p>
 
-  <script>
-    const daftarTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
+    <script>
+        const daftarTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
 
-    function tampilkanDaftar() {
-      const ul = document.getElementById("daftar");
-      ul.innerHTML = "";
+        function tampilkanRekap() {
+            const hariIni = new Date().toLocaleDateString("sv-SE");
+            let omzet = 0;
 
-      for (const t of daftarTransaksi) {
-        const li = document.createElement("li");
-        li.textContent = t.layanan + " - " + t.jumlah + " x Rp " + t.harga + " = Rp " + t.total;
-        ul.appendChild(li);
-            function tampilkanRekap() {
-      const hariIni = new Date().toLocaleDateString("sv-SE");
-      let omzet = 0;
+            for (const t of daftarTransaksi) {
+                if (t.tanggal === hariIni) {
+                    omzet = omzet + t.total;
+                }
+            }
 
-      for (const t of daftarTransaksi) {
-        if (t.tanggal === hariIni) {
-          omzet = omzet + t.total;
+            document.getElementById("rekap").textContent = "Omzet hari ini: Rp " + omzet;
         }
-      }
 
-      document.getElementById("rekap").textContent = "Omzet hari ini: Rp " + omzet;
-    }
-      }
-    }
+        function tampilkanDaftar() {
+            const ul = document.getElementById("daftar");
+            ul.innerHTML = "";
 
-    document.getElementById("tombol-tambah").addEventListener("click", function () {
-      const layanan = document.getElementById("layanan").value;
-      const jumlah = Number(document.getElementById("jumlah").value);
-      const harga = Number(document.getElementById("harga").value);
-      const total = jumlah * harga;
+            for (const t of daftarTransaksi) {
+                const li = document.createElement("li");
+                li.textContent = t.layanan + " - " + t.jumlah + " x Rp " + t.harga + " = Rp " + t.total;
+                ul.appendChild(li);
+            }
 
-      daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total,tanggal: new Date().toLocaleDateString("sv-SE") });
-      localStorage.setItem("transaksi", JSON.stringify(daftarTransaksi));
-      tampilkanDaftar();
-    });
+            tampilkanRekap();
+        }
 
-    tampilkanDaftar();
-    tampilkanRekap();
-    
-  </script>
+        document.getElementById("tombol-tambah").addEventListener("click", function () {
+            const layanan = document.getElementById("layanan").value;
+            const jumlah = Number(document.getElementById("jumlah").value);
+            const harga = Number(document.getElementById("harga").value);
+            const total = jumlah * harga;
+
+            daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total, tanggal: new Date().toLocaleDateString("sv-SE") });
+            localStorage.setItem("transaksi", JSON.stringify(daftarTransaksi));
+            tampilkanDaftar();
+        });
+
+        tampilkanDaftar();
+    </script>
 </body>
+
 </html>
