@@ -21,17 +21,29 @@
 
   <button id="tombol-tambah">Tambah</button>
 
-    <p id="hasil"></p>
-
+   <ul id="daftar"></ul>
   <script>
-    const tombol = document.getElementById("tombol-tambah");
+    const daftarTransaksi = [];
 
-    tombol.addEventListener("click", function () {
+    function tampilkanDaftar() {
+      const ul = document.getElementById("daftar");
+      ul.innerHTML = "";
+
+      for (const t of daftarTransaksi) {
+        const li = document.createElement("li");
+        li.textContent = t.layanan + " - " + t.jumlah + " x Rp " + t.harga + " = Rp " + t.total;
+        ul.appendChild(li);
+      }
+    }
+
+    document.getElementById("tombol-tambah").addEventListener("click", function () {
+      const layanan = document.getElementById("layanan").value;
       const jumlah = Number(document.getElementById("jumlah").value);
       const harga = Number(document.getElementById("harga").value);
       const total = jumlah * harga;
 
-      document.getElementById("hasil").textContent = "Total: Rp " + total;
+      daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total });
+      tampilkanDaftar();
     });
   </script>
 </body>
