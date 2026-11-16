@@ -2,74 +2,93 @@
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8">
-    <title>Kasir Antar Kita</title>
+  <meta charset="UTF-8">
+  <title>Kasir Antar Kita</title>
 </head>
 
 <body>
-    <h1>Kasir Antar Kita</h1>
+  <h1>Kasir Antar Kita</h1>
 
-    <h2>Tambah Transaksi</h2>
+  <h2>Tambah Transaksi</h2>
 
-    <label for="layanan">Nama layanan</label><br>
-    <input type="text" id="layanan" placeholder="Contoh: Fotokopi A4"><br><br>
+  <label for="layanan">Nama layanan</label><br>
+  <input type="text" id="layanan" placeholder="Contoh: Fotokopi A4"><br><br>
 
-    <label for="jumlah">Jumlah</label><br>
-    <input type="number" id="jumlah" value="1"><br><br>
+  <label for="jumlah">Jumlah</label><br>
+  <input type="number" id="jumlah" value="1"><br><br>
 
-    <label for="harga">Harga per unit (Rp)</label><br>
-    <input type="number" id="harga" value="500"><br><br>
+  <label for="harga">Harga per unit (Rp)</label><br>
+  <input type="number" id="harga" value="500"><br><br>
 
-    <button id="tombol-tambah">Tambah</button>
+  <button id="tombol-tambah">Tambah</button>
 
-    <h2>Daftar Transaksi</h2>
-    <ul id="daftar"></ul>
+  <h2>Daftar Transaksi</h2>
+  <ul id="daftar"></ul>
 
-    <h2>Rekap Hari Ini</h2>
-    <p id="rekap"></p>
+  <h2>Rekap Hari Ini</h2>
+  <p id="rekap"></p>
 
-    <script>
-        const daftarTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
+  <script>
+    const daftarTransaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
 
-        function tampilkanRekap() {
-            const hariIni = new Date().toLocaleDateString("sv-SE");
-            let omzet = 0;
+    function simpanData() {
+      localStorage.setItem("transaksi", JSON.stringify(daftarTransaksi));
+    }
 
-            for (const t of daftarTransaksi) {
-                if (t.tanggal === hariIni) {
-                    omzet = omzet + t.total;
-                }
-            }
+    function formatRupiah(angka) {
+      return "Rp " + angka.toLocaleString("id-ID");
+    }
 
-            document.getElementById("rekap").textContent = "Omzet hari ini: Rp " + omzet;
+    function tampilkanRekap() {
+      const hariIni = new Date().toLocaleDateString("sv-SE");
+      let omzet = 0;
+
+      for (const t of daftarTransaksi) {
+        if (t.tanggal === hariIni) {
+          omzet = omzet + t.total;
         }
+      }
 
-        function tampilkanDaftar() {
-            const ul = document.getElementById("daftar");
-            ul.innerHTML = "";
+      document.getElementById("rekap").textContent = "Omzet hari ini: " + formatRupiah(omzet);
+    }
 
-            for (const t of daftarTransaksi) {
-                const li = document.createElement("li");
-                li.textContent = t.layanan + " - " + t.jumlah + " x Rp " + t.harga + " = Rp " + t.total;
-                ul.appendChild(li);
-            }
+    function tampilkanDaftar() {
+      const ul = document.getElementById("daftar");
+      ul.innerHTML = "";
 
-            tampilkanRekap();
-        }
+      for (let i = 0; i < daftarTransaksi.length; i++) {
+        const t = daftarTransaksi[i];
+        const li = document.createElement("li");
+        li.textContent = t.layanan + " - " + t.jumlah + " x " + formatRupiah(t.harga) + " = " + formatRupiah(t.total) + " ";
 
-        document.getElementById("tombol-tambah").addEventListener("click", function () {
-            const layanan = document.getElementById("layanan").value;
-            const jumlah = Number(document.getElementById("jumlah").value);
-            const harga = Number(document.getElementById("harga").value);
-            const total = jumlah * harga;
-
-            daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total, tanggal: new Date().toLocaleDateString("sv-SE") });
-            localStorage.setItem("transaksi", JSON.stringify(daftarTransaksi));
-            tampilkanDaftar();
+        const tombolHapus = document.createElement("button");
+        tombolHapus.textContent = "Hapus";
+        tombolHapus.addEventListener("click", function () {
+          daftarTransaksi.splice(i, 1);
+          simpanData();
+          tampilkanDaftar();
         });
 
-        tampilkanDaftar();
-    </script>
+        li.appendChild(tombolHapus);
+        ul.appendChild(li);
+      }
+
+      tampilkanRekap();
+    }
+
+    document.getElementById("tombol-tambah").addEventListener("click", function () {
+      const layanan = document.getElementById("layanan").value;
+      const jumlah = Number(document.getElementById("jumlah").value);
+      const harga = Number(document.getElementById("harga").value);
+      const total = jumlah * harga;
+
+      daftarTransaksi.push({ layanan: layanan, jumlah: jumlah, harga: harga, total: total, tanggal: new Date().toLocaleDateString("sv-SE") });
+      simpanData();
+      tampilkanDaftar();
+    });
+
+    tampilkanDaftar();
+  </script>
 </body>
 
 </html>
